@@ -1,0 +1,133 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Language strings for local_walletrevenue.
+ *
+ * @package    local_walletrevenue
+ * @copyright  2026 Mohammad Nabil <mohammad@smartlearn.education>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+$string['pluginname'] = 'Teacher revenue and payout report';
+
+// Capabilities.
+$string['walletrevenue:viewall'] = 'View full revenue and payout reports';
+$string['walletrevenue:managepayouts'] = 'Record and manage teacher payouts';
+$string['walletrevenue:manageconfig'] = 'Configure payees and commission rates';
+$string['walletrevenue:viewown'] = 'View personal teacher revenue and payouts';
+$string['walletrevenue:recalculate'] = 'Recalculate commission rates on past sales';
+
+// Settings.
+$string['settings_general'] = 'General settings';
+$string['defaultrate'] = 'Global default commission rate';
+$string['defaultrate_desc'] = 'Default percentage of course revenue credited to the teacher when no override is set.';
+$string['defaultcurrency'] = 'Default currency';
+$string['defaultcurrency_desc'] = 'Standard 3-letter currency code (e.g. USD, EUR) for reports and payouts.';
+$string['includemicropayments'] = 'Include micro-payments';
+$string['includemicropayments_desc'] = 'Include availability_wallet activity and section access payments in course revenue.';
+
+// Navigation & tabs.
+$string['reports'] = 'Revenue reports';
+$string['payees'] = 'Course payees';
+$string['rates'] = 'Commission rates';
+$string['payouts'] = 'Payouts';
+$string['myrevenue'] = 'My revenue and payouts';
+$string['recalculate'] = 'Recalculate rates';
+
+// Payee management.
+$string['assignpayee'] = 'Assign payee';
+$string['changepayee'] = 'Change payee';
+$string['nopayeeassigned'] = 'No payee assigned';
+$string['unassignedalert'] = 'There are {$a} courses with wallet sales that have no payee assigned. Revenue cannot be paid out until a teacher is assigned.';
+$string['selectteacher'] = 'Select teacher';
+$string['course'] = 'Course';
+$string['payeeteacher'] = 'Payee teacher';
+
+// Rates.
+$string['rate_percent'] = 'Commission percentage';
+$string['rate_scope'] = 'Scope';
+$string['rate_scope_course'] = 'Course override';
+$string['rate_scope_teacher'] = 'Teacher override';
+$string['appliedrate'] = 'Applied rate';
+$string['addrateoverride'] = 'Add commission override';
+$string['itemid'] = 'Target ID';
+$string['itemid_help'] = 'Enter the Course ID for a course override, or the Teacher user ID for a teacher override.';
+
+// Reports.
+$string['teacher'] = 'Teacher';
+$string['currency'] = 'Currency';
+$string['totalsales'] = 'Total sales';
+$string['teachershare'] = 'Teacher share';
+$string['transferred'] = 'Transferred';
+$string['balance'] = 'Current balance';
+$string['periodnetdelta'] = 'Period net change';
+$string['paidstudents'] = 'Paid enrolments';
+$string['listprice'] = 'List price';
+$string['viewcourses'] = 'View courses';
+$string['recordsale'] = 'Sale details';
+
+// Payouts.
+$string['recordpayout'] = 'Record payout';
+$string['editpayout'] = 'Edit payout';
+$string['deletepayout'] = 'Delete payout';
+$string['payoutamount'] = 'Payout amount';
+$string['paymentmethod'] = 'Payment method';
+$string['method_bank'] = 'Bank transfer';
+$string['method_paypal'] = 'PayPal';
+$string['method_cash'] = 'Cash';
+$string['method_other'] = 'Other';
+$string['paymentreference'] = 'Reference / transaction ID';
+$string['paymentnotes'] = 'Notes / description';
+$string['paymentproof'] = 'Payment receipt / screenshot';
+$string['paymentproof_help'] = 'Upload a screenshot or PDF document confirming the money transfer.';
+$string['paidat'] = 'Date paid';
+$string['payoutrecorded'] = 'Payout recorded successfully.';
+$string['confirmpayoutdelete'] = 'Are you sure you want to delete this payout record? The teacher balance will increase accordingly.';
+
+// Teacher portal (my.php).
+$string['myearnings'] = 'My earnings overview';
+$string['mycourses'] = 'My monetized courses';
+$string['mypayouts'] = 'Payout history and receipts';
+$string['viewreceipt'] = 'View receipt';
+$string['noreceipt'] = 'No receipt attached';
+$string['anonymizedstudent'] = 'Student #{$a}';
+
+// Tasks.
+$string['task_sync_sales'] = 'Synchronize wallet course sales and refunds';
+
+// Recalculation.
+$string['recalculatetool'] = 'Commission rate recalculation tool';
+$string['previewdiff'] = 'Preview changes';
+$string['applyrecalculation'] = 'Apply recalculation';
+
+// Privacy.
+$string['privacy:metadata:payee'] = 'Information about course payee teacher assignments.';
+$string['privacy:metadata:payee:courseid'] = 'The course ID.';
+$string['privacy:metadata:payee:teacherid'] = 'The teacher user ID.';
+$string['privacy:metadata:rate'] = 'Commission rate overrides assigned to teachers or courses.';
+$string['privacy:metadata:sale'] = 'Records of student purchases, course enrollments, and teacher shares.';
+$string['privacy:metadata:sale:studentid'] = 'The student who purchased the enrolment.';
+$string['privacy:metadata:sale:teacherid'] = 'The teacher receiving revenue share.';
+$string['privacy:metadata:sale:amount'] = 'The net amount paid.';
+$string['privacy:metadata:sale:teachershare'] = 'The calculated teacher share.';
+$string['privacy:metadata:payout'] = 'Financial payout transfers recorded for teachers.';
+$string['privacy:metadata:payout:teacherid'] = 'The teacher who received the payout.';
+$string['privacy:metadata:payout:amount'] = 'The amount paid out.';
+$string['privacy:metadata:payout:method'] = 'The payment method used.';
+$string['privacy:metadata:payout:reference'] = 'The transaction reference number.';

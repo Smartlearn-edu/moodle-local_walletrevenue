@@ -1,0 +1,54 @@
+name: Moodle Plugin CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.2', '8.3']
+        moodle-branch: ['MOODLE_500_STABLE', 'main']
+        database: ['pgsql', 'mariadb']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: local/walletrevenue
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, intl, mysqli, pgsql
+          coverage: none
+
+      - name: Initialise moodle-plugin-ci
+        run: |
+          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
+          echo $(cd ci/bin; pwd) >> $GITHUB_PATH
+
+      - name: Install Moodle
+        run: |
+          moodle-plugin-ci install --plugin local/walletrevenue --db-type ${{ matrix.database }} --branch ${{ matrix.moodle-branch }}
+
+      - name: PHP Lint
+        if: always()
+        run: moodle-plugin-ci phplint
+
+      - name: PHP CodeSniffer
+        if: always()
+        run: moodle-plugin-ci phpcs
+
+      - name: Moodle PHPDoc
+        if: always()
+        run: moodle-plugin-ci phpdoc
+
+      - name: Validate
+        if: always()
+        run: moodle-plugin-ci validate
+
+      - name: PHPUnit Tests
+        if: always()
+        run: moodle-plugin-ci phpunit
