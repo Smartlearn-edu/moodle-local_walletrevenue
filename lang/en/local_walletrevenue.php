@@ -113,6 +113,7 @@ $string['mypayouts'] = 'Payout history and receipts';
 $string['viewreceipt'] = 'View receipt';
 $string['noreceipt'] = 'No receipt attached';
 $string['anonymizedstudent'] = 'Student #{$a}';
+$string['notateacher'] = 'No teacher revenue records found for your account. If you teach monetized courses, your earnings and payout history will appear here.';
 
 // Tasks.
 $string['task_sync_sales'] = 'Synchronize wallet course sales and refunds';

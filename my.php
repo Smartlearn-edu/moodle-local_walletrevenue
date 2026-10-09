@@ -33,18 +33,6 @@ if (isguestuser()) {
 
 $context = context_system::instance();
 
-// Allow access if user is manager, has viewown, or is a teacher in at least one course / has records.
-$canview = has_capability('local/walletrevenue:viewall', $context)
-    || has_capability('local/walletrevenue:viewown', $context)
-    || !empty(get_user_capability_course('moodle/course:update', $USER->id))
-    || $DB->record_exists('local_walletrevenue_sale', ['teacherid' => $USER->id])
-    || $DB->record_exists('local_walletrevenue_payee', ['teacherid' => $USER->id])
-    || $DB->record_exists('local_walletrevenue_payout', ['teacherid' => $USER->id]);
-
-if (!$canview) {
-    throw new \required_capability_exception($context, 'local/walletrevenue:viewown', 'nopermissions', '');
-}
-
 $PAGE->set_url(new moodle_url('/local/walletrevenue/my.php'));
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('myrevenue', 'local_walletrevenue'));
@@ -60,7 +48,7 @@ $hassales = $DB->record_exists('local_walletrevenue_sale', ['teacherid' => $teac
 $haspayouts = $DB->record_exists('local_walletrevenue_payout', ['teacherid' => $teacherid]);
 
 if (!$haspayeecourses && !$hassales && !$haspayouts) {
-    echo $OUTPUT->notification(get_string('none'), \core\output\notification::NOTIFY_INFO);
+    echo $OUTPUT->notification(get_string('notateacher', 'local_walletrevenue'), \core\output\notification::NOTIFY_INFO);
     echo $OUTPUT->footer();
     exit;
 }
