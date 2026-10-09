@@ -36,10 +36,14 @@ class payout_form extends moodleform {
         $mform = $this->_form;
 
         $payoutid = $this->_customdata['id'] ?? 0;
+        $action = $this->_customdata['action'] ?? ($payoutid > 0 ? 'edit' : 'add');
         $teachers = $this->_customdata['teachers'] ?? [];
 
         $mform->addElement('hidden', 'id', $payoutid);
         $mform->setType('id', PARAM_INT);
+
+        $mform->addElement('hidden', 'action', $action);
+        $mform->setType('action', PARAM_ALPHA);
 
         // Teacher selector.
         $teacheroptions = [];

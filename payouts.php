@@ -42,6 +42,15 @@ $currency  = optional_param('currency', '', PARAM_ALPHANUM);
 $amount    = optional_param('amount', 0.0, PARAM_FLOAT);
 
 $url = new moodle_url('/local/walletrevenue/payouts.php');
+if ($action !== '') {
+    $url->param('action', $action);
+}
+if ($id > 0) {
+    $url->param('id', $id);
+}
+if ($teacherid > 0) {
+    $url->param('teacherid', $teacherid);
+}
 $PAGE->set_url($url);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('payouts', 'local_walletrevenue'));
@@ -71,7 +80,8 @@ if ($action === 'delete' && $id > 0) {
 // Handle Add or Edit.
 if ($action === 'add' || ($action === 'edit' && $id > 0)) {
     // Eligible teachers: those with sales, payees, or teaching roles in any course.
-    $teachersql = "SELECT DISTINCT u.id, u.firstname, u.lastname, u.email
+    $userfields = \core_user\fields::for_name()->get_sql('u')->selects;
+    $teachersql = "SELECT DISTINCT u.id, u.email {$userfields}
                      FROM {user} u
                     WHERE u.deleted = 0
                       AND (
@@ -117,7 +127,15 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
         );
     }
 
-    $form = new payout_form(null, ['id' => $id, 'teachers' => $teachers]);
+    $formurl = new moodle_url('/local/walletrevenue/payouts.php', ['action' => $action]);
+    if ($id > 0) {
+        $formurl->param('id', $id);
+    }
+    $form = new payout_form($formurl, [
+        'id'       => $id,
+        'action'   => $action,
+        'teachers' => $teachers,
+    ]);
 
     if ($id > 0) {
         $payout->proof_filemanager = $draftitemid;

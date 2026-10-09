@@ -42,7 +42,8 @@ class recalculate_form extends moodleform {
 
         // Teacher filter.
         $teachers = [0 => get_string('all')];
-        $teachersql = "SELECT DISTINCT u.id, u.firstname, u.lastname
+        $userfields = \core_user\fields::for_name()->get_sql('u')->selects;
+        $teachersql = "SELECT DISTINCT u.id {$userfields}
                          FROM {user} u
                          JOIN {local_walletrevenue_sale} s ON s.teacherid = u.id
                      ORDER BY u.firstname, u.lastname";

@@ -273,9 +273,10 @@ class payee_resolver {
             return [];
         }
 
-        $teachers = get_enrolled_users($context, 'moodle/course:update', 0, 'u.id, u.firstname, u.lastname, u.email');
+        $userfields = 'u.id, u.email' . \core_user\fields::for_name()->get_sql('u')->selects;
+        $teachers = get_enrolled_users($context, 'moodle/course:update', 0, $userfields);
         if (empty($teachers)) {
-            $teachers = get_enrolled_users($context, '', 0, 'u.id, u.firstname, u.lastname, u.email');
+            $teachers = get_enrolled_users($context, '', 0, $userfields);
         }
 
         return $teachers;
