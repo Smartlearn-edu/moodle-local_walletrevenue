@@ -90,7 +90,6 @@ class payout_form extends moodleform {
             'maxbytes'       => 20971520, // 20MB
             'maxfiles'       => 5,
             'accepted_types' => ['image', '.pdf'],
-            'return_types'   => FILE_INTERNAL,
         ];
         $mform->addElement('filemanager', 'proof_filemanager', get_string('paymentproof', 'local_walletrevenue'), null, $filemanageroptions);
         $mform->addHelpButton('proof_filemanager', 'paymentproof', 'local_walletrevenue');

@@ -59,6 +59,7 @@ $capabilities = [
             'manager'        => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
             'teacher'        => CAP_ALLOW,
+            'user'           => CAP_ALLOW,
         ],
     ],
 

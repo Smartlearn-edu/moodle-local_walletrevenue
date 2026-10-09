@@ -27,8 +27,23 @@ require_once(__DIR__ . '/../../config.php');
 use local_walletrevenue\local\calculator;
 
 require_login();
+if (isguestuser()) {
+    throw new \moodle_exception('noguest');
+}
+
 $context = context_system::instance();
-require_capability('local/walletrevenue:viewown', $context);
+
+// Allow access if user is manager, has viewown, or is a teacher in at least one course / has records.
+$canview = has_capability('local/walletrevenue:viewall', $context)
+    || has_capability('local/walletrevenue:viewown', $context)
+    || !empty(get_user_capability_course('moodle/course:update', $USER->id))
+    || $DB->record_exists('local_walletrevenue_sale', ['teacherid' => $USER->id])
+    || $DB->record_exists('local_walletrevenue_payee', ['teacherid' => $USER->id])
+    || $DB->record_exists('local_walletrevenue_payout', ['teacherid' => $USER->id]);
+
+if (!$canview) {
+    throw new \required_capability_exception($context, 'local/walletrevenue:viewown', 'nopermissions', '');
+}
 
 $PAGE->set_url(new moodle_url('/local/walletrevenue/my.php'));
 $PAGE->set_context($context);
