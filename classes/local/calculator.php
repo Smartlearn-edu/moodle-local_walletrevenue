@@ -41,6 +41,9 @@ class calculator {
     ): array {
         global $DB;
 
+        // Auto-heal and resolve any sales to course teachers if they are unassigned.
+        payee_resolver::resolve_all_unassigned_sales();
+
         // 1. Fetch lifetime teacher shares and all-time transferred to compute current balance accurately.
         $lifetime = self::get_lifetime_balances($filterteacher, $filtercurrency);
 
@@ -69,7 +72,7 @@ class calculator {
             // Teacher info.
             $teacheruser = null;
             if ($teacherid > 0) {
-                $teacheruser = $DB->get_record('user', ['id' => $teacherid], 'id, firstname, lastname, email');
+                $teacheruser = \core_user::get_user($teacherid);
             }
 
             $perioddelta = $ps['teachershare'] - $pp['transferred'];

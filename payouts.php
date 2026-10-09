@@ -224,7 +224,9 @@ if (empty($payouts)) {
     echo $OUTPUT->notification(get_string('none'), \core\output\notification::NOTIFY_INFO);
 } else {
     foreach ($payouts as $p) {
-        $teacherdisplay = fullname((object)['firstname' => $p->firstname, 'lastname' => $p->lastname]) . '<br><small class="text-muted">' . s($p->email) . '</small>';
+        $teacheruser = \core_user::get_user($p->teacherid);
+        $teacherdisplay = ($teacheruser ? fullname($teacheruser) : '#' . $p->teacherid) .
+            '<br><small class="text-muted">' . s($p->email) . '</small>';
 
         // Check for attached proof files.
         $files = $fs->get_area_files($context->id, 'local_walletrevenue', 'payout_proof', $p->id, 'filename', false);

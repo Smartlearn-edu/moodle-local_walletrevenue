@@ -39,7 +39,7 @@ class payee_form extends moodleform {
         $mform->addElement('hidden', 'courseid', $courseid);
         $mform->setType('courseid', PARAM_INT);
 
-        $options = [0 => get_string('nopayeeassigned', 'local_walletrevenue')];
+        $options = [0 => get_string('autodetectoption', 'local_walletrevenue')];
         foreach ($teachers as $teacher) {
             $options[$teacher->id] = fullname($teacher) . ' (' . $teacher->email . ')';
         }

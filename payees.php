@@ -99,12 +99,16 @@ if (empty($courses)) {
     echo $OUTPUT->notification(get_string('nocoursesfound', 'moodle'), \core\output\notification::NOTIFY_INFO);
 } else {
     foreach ($courses as $c) {
-        $teacherid = (int) ($c->teacherid ?? 0);
+        $teacherinfo = payee_resolver::get_teacher_info($c->id);
+        $teacherid = $teacherinfo['teacherid'];
         if ($teacherid > 0) {
-            $userobj = (object) ['id' => $teacherid, 'firstname' => $c->firstname, 'lastname' => $c->lastname, 'email' => $c->email];
-            $teacherdisplay = fullname($userobj) . ' (' . s($c->email) . ')';
+            $userobj = \core_user::get_user($teacherid);
+            $sourcetag = $teacherinfo['source'] === 'manual'
+                ? '<span class="badge bg-primary text-white ms-1">' . get_string('manualoverride', 'local_walletrevenue') . '</span>'
+                : '<span class="badge bg-secondary text-white ms-1">' . get_string('autodetected', 'local_walletrevenue') . '</span>';
+            $teacherdisplay = fullname($userobj) . ' (' . s($userobj->email) . ') ' . $sourcetag;
         } else {
-            $teacherdisplay = '<span class="badge bg-warning text-dark">' . get_string('nopayeeassigned', 'local_walletrevenue') . '</span>';
+            $teacherdisplay = '<span class="badge bg-warning text-dark">' . get_string('noteacherfound', 'local_walletrevenue') . '</span>';
         }
 
         $rateinfo = rate_resolver::get_rate_info($c->id, $teacherid);

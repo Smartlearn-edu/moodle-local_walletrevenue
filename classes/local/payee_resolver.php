@@ -16,8 +16,13 @@
 
 namespace local_walletrevenue\local;
 
+use context_course;
+
 /**
- * Resolver and manager for course payee teacher assignments.
+ * Resolver and manager for course teacher assignments.
+ *
+ * Automatically detects the course teacher from course enrolments,
+ * while allowing optional manual overrides by the administrator.
  *
  * @package    local_walletrevenue
  * @copyright  2026 Mohammad Nabil <mohammad@smartlearn.education>
@@ -25,25 +30,121 @@ namespace local_walletrevenue\local;
  */
 class payee_resolver {
     /**
-     * Get the assigned payee teacher ID for a course.
+     * Get the teacher ID for a course.
+     *
+     * First checks for an explicit manual override. If none is set,
+     * it automatically detects the enrolled editing teacher of the course.
      *
      * @param int $courseid Course ID.
-     * @return int Teacher user ID, or 0 if unassigned.
+     * @return int Teacher user ID, or 0 if no teacher found.
      */
     public static function get_payee(int $courseid): int {
-        global $DB;
-        $record = $DB->get_record('local_walletrevenue_payee', ['courseid' => $courseid]);
-        return $record ? (int) $record->teacherid : 0;
+        $info = self::get_teacher_info($courseid);
+        return $info['teacherid'];
     }
 
     /**
-     * Assign or change the payee teacher for a course.
-     *
-     * Automatically retroactively recalculates any past unassigned sales (teacherid = 0)
-     * for this course using the newly resolved commission rate hierarchy.
+     * Get detailed teacher assignment info for a course.
      *
      * @param int $courseid Course ID.
-     * @param int $teacherid Teacher user ID (0 to unassign).
+     * @return array Array with keys: 'teacherid' (int) and 'source' ('manual'|'auto'|'none').
+     */
+    public static function get_teacher_info(int $courseid): array {
+        global $DB;
+
+        if ($courseid <= 0) {
+            return ['teacherid' => 0, 'source' => 'none'];
+        }
+
+        // 1. Check for explicit manual override.
+        $record = $DB->get_record('local_walletrevenue_payee', ['courseid' => $courseid]);
+        if ($record && !empty($record->teacherid)) {
+            return [
+                'teacherid' => (int) $record->teacherid,
+                'source'    => 'manual',
+            ];
+        }
+
+        // 2. Automatically detect teacher from course enrolments.
+        $autoid = self::auto_detect_teacher($courseid);
+        if ($autoid > 0) {
+            return [
+                'teacherid' => $autoid,
+                'source'    => 'auto',
+            ];
+        }
+
+        return ['teacherid' => 0, 'source' => 'none'];
+    }
+
+    /**
+     * Automatically detect the primary teacher enrolled in a course.
+     *
+     * @param int $courseid Course ID.
+     * @return int Teacher user ID, or 0 if none found.
+     */
+    public static function auto_detect_teacher(int $courseid): int {
+        global $DB, $CFG;
+
+        if ($courseid <= 0) {
+            return 0;
+        }
+
+        $context = context_course::instance($courseid, IGNORE_MISSING);
+        if (!$context) {
+            return 0;
+        }
+
+        // 1. Check users with capability moodle/course:update (editing teachers).
+        $teachers = get_enrolled_users($context, 'moodle/course:update', 0, 'u.id, u.firstname, u.lastname', 'u.id ASC');
+        if (!empty($teachers)) {
+            $first = reset($teachers);
+            return (int) $first->id;
+        }
+
+        // 2. Check course contacts (configured roles in $CFG->coursecontact).
+        if (!empty($CFG->coursecontact)) {
+            $contactroles = explode(',', $CFG->coursecontact);
+            [$insql, $params] = $DB->get_in_or_equal($contactroles, SQL_PARAMS_NAMED, 'r');
+            $params['contextid'] = $context->id;
+
+            $sql = "SELECT u.id
+                      FROM {role_assignments} ra
+                      JOIN {user} u ON u.id = ra.userid
+                     WHERE ra.contextid = :contextid AND ra.roleid $insql AND u.deleted = 0
+                  ORDER BY ra.id ASC";
+            $contact = $DB->get_record_sql($sql, $params, IGNORE_MULTIPLE);
+            if ($contact) {
+                return (int) $contact->id;
+            }
+        }
+
+        // 3. Fallback: check any user with teacher archetype roles in the course.
+        $teacherroles = $DB->get_records_select('role', "archetype IN ('editingteacher', 'teacher')", null, '', 'id');
+        if (!empty($teacherroles)) {
+            $roleids = array_keys($teacherroles);
+            [$rinsql, $rparams] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'ar');
+            $rparams['contextid'] = $context->id;
+
+            $sql = "SELECT u.id
+                      FROM {role_assignments} ra
+                      JOIN {user} u ON u.id = ra.userid
+                     WHERE ra.contextid = :contextid AND ra.roleid $rinsql AND u.deleted = 0
+                  ORDER BY ra.id ASC";
+            $res = $DB->get_record_sql($sql, $rparams, IGNORE_MULTIPLE);
+            if ($res) {
+                return (int) $res->id;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Assign or change the manual teacher override for a course.
+     *
+     * @param int $courseid Course ID.
+     * @param int $teacherid Teacher user ID (0 to remove override and use auto-detect).
      * @param int $usermodified User ID making the change (default current $USER).
      * @return bool True on success.
      */
@@ -71,16 +172,46 @@ class payee_resolver {
             $DB->insert_record('local_walletrevenue_payee', $record);
         }
 
-        // If a real teacher is assigned, recalculate past unassigned sales.
-        if ($teacherid > 0) {
-            self::recalculate_unassigned_sales($courseid, $teacherid);
+        // Effective teacher is either the manual choice or auto-detected.
+        $effective = $teacherid > 0 ? $teacherid : self::auto_detect_teacher($courseid);
+        if ($effective > 0) {
+            self::recalculate_unassigned_sales($courseid, $effective);
         }
 
         return true;
     }
 
     /**
-     * Recalculate historical unassigned sales for a course once a payee is designated.
+     * Automatically scan and resolve any sales with teacherid = 0.
+     *
+     * @return int Number of resolved sales.
+     */
+    public static function resolve_all_unassigned_sales(): int {
+        global $DB;
+
+        $unassigned = $DB->get_records('local_walletrevenue_sale', ['teacherid' => 0]);
+        if (empty($unassigned)) {
+            return 0;
+        }
+
+        $resolved = 0;
+        foreach ($unassigned as $sale) {
+            $teacherid = self::get_payee((int) $sale->courseid);
+            if ($teacherid > 0) {
+                $rate = rate_resolver::resolve((int) $sale->courseid, $teacherid);
+                $sale->teacherid = $teacherid;
+                $sale->percent = $rate;
+                $sale->teachershare = round(((float) $sale->amount * $rate) / 100.0, 4);
+                $DB->update_record('local_walletrevenue_sale', $sale);
+                $resolved++;
+            }
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Recalculate historical unassigned sales for a course.
      *
      * @param int $courseid Course ID.
      * @param int $teacherid Assigned teacher ID.
@@ -113,12 +244,15 @@ class payee_resolver {
     }
 
     /**
-     * Get count of courses that have recorded wallet sales but no payee teacher assigned.
+     * Get count of courses that have recorded wallet sales but no teacher found.
      *
      * @return int Number of unassigned courses with sales.
      */
     public static function get_unassigned_courses_count(): int {
         global $DB;
+
+        // Auto-heal any unassigned sales first.
+        self::resolve_all_unassigned_sales();
 
         $sql = "SELECT COUNT(DISTINCT courseid)
                   FROM {local_walletrevenue_sale}
@@ -130,20 +264,15 @@ class payee_resolver {
     /**
      * Get list of eligible teachers for a course.
      *
-     * Retrieves users enrolled with editingteacher or teacher role in the course context.
-     *
      * @param int $courseid Course ID.
-     * @return array Array of user objects (id, firstname, lastname, email).
+     * @return array Array of user objects.
      */
     public static function get_eligible_teachers(int $courseid): array {
-        global $DB;
-
-        $context = \context_course::instance($courseid, IGNORE_MISSING);
+        $context = context_course::instance($courseid, IGNORE_MISSING);
         if (!$context) {
             return [];
         }
 
-        // Fetch users with capabilities in course context.
         $teachers = get_enrolled_users($context, 'moodle/course:update', 0, 'u.id, u.firstname, u.lastname, u.email');
         if (empty($teachers)) {
             $teachers = get_enrolled_users($context, '', 0, 'u.id, u.firstname, u.lastname, u.email');

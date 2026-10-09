@@ -44,20 +44,26 @@ $string['includemicropayments_desc'] = 'Include availability_wallet activity and
 
 // Navigation & tabs.
 $string['reports'] = 'Revenue reports';
-$string['payees'] = 'Course payees';
+$string['payees'] = 'Course teachers';
 $string['rates'] = 'Commission rates';
 $string['payouts'] = 'Payouts';
 $string['myrevenue'] = 'My revenue and payouts';
 $string['recalculate'] = 'Recalculate rates';
 
-// Payee management.
-$string['assignpayee'] = 'Assign payee';
-$string['changepayee'] = 'Change payee';
-$string['nopayeeassigned'] = 'No payee assigned';
-$string['unassignedalert'] = 'There are {$a} courses with wallet sales that have no payee assigned. Revenue cannot be paid out until a teacher is assigned.';
+// Teacher management.
+$string['assignpayee'] = 'Assign / override teacher';
+$string['changepayee'] = 'Change teacher';
+$string['nopayeeassigned'] = 'No teacher found';
+$string['unassignedalert'] = 'There are {$a} courses with wallet sales where no teacher could be found in the course. Please enrol a teacher in the course or assign one manually.';
 $string['selectteacher'] = 'Select teacher';
 $string['course'] = 'Course';
-$string['payeeteacher'] = 'Payee teacher';
+$string['payeeteacher'] = 'Course teacher';
+$string['autodetected'] = 'Auto-detected';
+$string['manualoverride'] = 'Manual override';
+$string['noteacherfound'] = 'No teacher found';
+$string['autodetectoption'] = 'Automatic (auto-detect course teacher)';
+$string['timefrom'] = 'From date';
+$string['timeto'] = 'To date';
 
 // Rates.
 $string['rate_percent'] = 'Commission percentage';

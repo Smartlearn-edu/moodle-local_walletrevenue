@@ -67,7 +67,7 @@ echo ui_helper::render_unassigned_banner();
 if ($view === 'courses' && $teacherid >= 0) {
     $teachername = get_string('nopayeeassigned', 'local_walletrevenue');
     if ($teacherid > 0) {
-        $u = $DB->get_record('user', ['id' => $teacherid]);
+        $u = \core_user::get_user($teacherid);
         if ($u) {
             $teachername = fullname($u);
         }

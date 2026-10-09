@@ -54,8 +54,8 @@ class recalculate_form extends moodleform {
         $mform->setType('teacherid', PARAM_INT);
 
         // Date range.
-        $mform->addElement('date_selector', 'timefrom', get_string('from'), ['optional' => true]);
-        $mform->addElement('date_selector', 'timeto', get_string('to'), ['optional' => true]);
+        $mform->addElement('date_selector', 'timefrom', get_string('timefrom', 'local_walletrevenue'), ['optional' => true]);
+        $mform->addElement('date_selector', 'timeto', get_string('timeto', 'local_walletrevenue'), ['optional' => true]);
 
         // Mode: Preview or Apply.
         $mform->addElement('advcheckbox', 'previewonly', get_string('previewdiff', 'local_walletrevenue'));
