@@ -254,6 +254,7 @@ $table->head = [
     get_string('paymentmethod', 'local_walletrevenue'),
     get_string('paymentreference', 'local_walletrevenue'),
     get_string('paidat', 'local_walletrevenue'),
+    get_string('paymentnotes', 'local_walletrevenue'),
     get_string('paymentproof', 'local_walletrevenue'),
     get_string('actions'),
 ];
@@ -282,9 +283,14 @@ if (empty($payouts)) {
                 $file->get_filename(),
                 true
             );
-            $prooflinks[] = html_writer::link($fileurl, '📎 ' . s($file->get_filename()), ['target' => '_blank', 'class' => 'd-block text-truncate', 'style' => 'max-width:180px;']);
+            $prooflinks[] = html_writer::link(
+                $fileurl,
+                '📎 ' . s($file->get_filename()),
+                ['target' => '_blank', 'class' => 'd-block text-truncate', 'style' => 'max-width:180px;']
+            );
         }
-        $proofdisplay = !empty($prooflinks) ? implode('', $prooflinks) : '<span class="text-muted">' . get_string('noreceipt', 'local_walletrevenue') . '</span>';
+        $proofdisplay = !empty($prooflinks) ? implode('', $prooflinks) :
+            '<span class="text-muted">' . get_string('noreceipt', 'local_walletrevenue') . '</span>';
 
         $editurl = new moodle_url('/local/walletrevenue/payouts.php', ['action' => 'edit', 'id' => $p->id]);
         $deleteurl = new moodle_url('/local/walletrevenue/payouts.php', ['action' => 'delete', 'id' => $p->id, 'sesskey' => sesskey()]);
@@ -295,13 +301,22 @@ if (empty($payouts)) {
                        'onclick' => 'return confirm("' . get_string('confirmpayoutdelete', 'local_walletrevenue') . '");',
                    ]);
 
+        $methodstr = s($p->method);
+        $methodlangkey = 'method_' . $p->method;
+        if (get_string_manager()->string_exists($methodlangkey, 'local_walletrevenue')) {
+            $methodstr = get_string($methodlangkey, 'local_walletrevenue');
+        }
+
+        $notesdisplay = !empty($p->notes) ? s($p->notes) : '<span class="text-muted">-</span>';
+
         $table->data[] = [
             $teacherdisplay,
             '<strong>' . number_format($p->amount, 2) . '</strong>',
             s($p->currency),
-            s($p->method),
+            $methodstr,
             s($p->reference),
             userdate($p->paidat),
+            $notesdisplay,
             $proofdisplay,
             $actions,
         ];

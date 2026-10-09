@@ -132,6 +132,7 @@ $payouttable->head = [
     get_string('currency', 'local_walletrevenue'),
     get_string('paymentmethod', 'local_walletrevenue'),
     get_string('paymentreference', 'local_walletrevenue'),
+    get_string('paymentnotes', 'local_walletrevenue'),
     get_string('paymentproof', 'local_walletrevenue'),
 ];
 $payouttable->attributes['class'] = 'generaltable';
@@ -154,17 +155,31 @@ if (empty($payouts)) {
                 $f->get_filename(),
                 true
             );
-            $receiptlinks[] = html_writer::link($furl, '📄 ' . s($f->get_filename()), ['target' => '_blank', 'class' => 'btn btn-sm btn-outline-primary mb-1 d-block text-truncate']);
+            $receiptlinks[] = html_writer::link(
+                $furl,
+                '📄 ' . s($f->get_filename()),
+                ['target' => '_blank', 'class' => 'btn btn-sm btn-outline-primary mb-1 d-block text-truncate']
+            );
         }
 
-        $receiptdisplay = !empty($receiptlinks) ? implode('', $receiptlinks) : '<span class="text-muted">' . get_string('noreceipt', 'local_walletrevenue') . '</span>';
+        $receiptdisplay = !empty($receiptlinks) ? implode('', $receiptlinks) :
+            '<span class="text-muted">' . get_string('noreceipt', 'local_walletrevenue') . '</span>';
+
+        $methodstr = s($p->method);
+        $methodlangkey = 'method_' . $p->method;
+        if (get_string_manager()->string_exists($methodlangkey, 'local_walletrevenue')) {
+            $methodstr = get_string($methodlangkey, 'local_walletrevenue');
+        }
+
+        $notesdisplay = !empty($p->notes) ? s($p->notes) : '<span class="text-muted">-</span>';
 
         $payouttable->data[] = [
             userdate($p->paidat),
             '<strong>' . number_format($p->amount, 2) . '</strong>',
             s($p->currency),
-            s($p->method),
+            $methodstr,
             s($p->reference),
+            $notesdisplay,
             $receiptdisplay,
         ];
     }

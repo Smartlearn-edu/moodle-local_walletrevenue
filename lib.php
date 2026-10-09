@@ -61,10 +61,9 @@ function local_walletrevenue_pluginfile($course, $cm, $context, $filearea, $args
     // Permission check: Admin/manager or the specific payee teacher.
     $hasmanage = has_capability('local/walletrevenue:managepayouts', $context)
         || has_capability('local/walletrevenue:viewall', $context);
-    $isteacher = ($USER->id == $payout->teacherid)
-        && has_capability('local/walletrevenue:viewown', $context);
+    $isteacher = ((int) $USER->id === (int) $payout->teacherid);
 
-    if (!$hasmanage && !isteacher) {
+    if (!$hasmanage && !$isteacher) {
         return false;
     }
 
