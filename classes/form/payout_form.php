@@ -46,7 +46,9 @@ class payout_form extends moodleform {
         foreach ($teachers as $t) {
             $teacheroptions[$t->id] = fullname($t) . ' (' . $t->email . ')';
         }
-        $mform->addElement('select', 'teacherid', get_string('teacher', 'local_walletrevenue'), $teacheroptions);
+        $mform->addElement('autocomplete', 'teacherid', get_string('teacher', 'local_walletrevenue'), $teacheroptions, [
+            'placeholder' => get_string('selectteacher', 'local_walletrevenue'),
+        ]);
         $mform->setType('teacherid', PARAM_INT);
         $mform->addRule('teacherid', null, 'required', null, 'client');
 
@@ -106,6 +108,14 @@ class payout_form extends moodleform {
      */
     public function validation($data, $files): array {
         $errors = parent::validation($data, $files);
+
+        $teacherid = 0;
+        if (!empty($data['teacherid'])) {
+            $teacherid = is_array($data['teacherid']) ? (int) reset($data['teacherid']) : (int) $data['teacherid'];
+        }
+        if ($teacherid <= 0) {
+            $errors['teacherid'] = get_string('required');
+        }
 
         $amount = (float) ($data['amount'] ?? 0);
         if ($amount <= 0) {

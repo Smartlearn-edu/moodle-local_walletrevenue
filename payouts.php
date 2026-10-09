@@ -23,6 +23,7 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
+require_once($CFG->libdir . '/filelib.php');
 
 use local_walletrevenue\form\payout_form;
 use local_walletrevenue\local\ui_helper;
@@ -69,10 +70,22 @@ if ($action === 'delete' && $id > 0) {
 
 // Handle Add or Edit.
 if ($action === 'add' || ($action === 'edit' && $id > 0)) {
-    // Eligible teachers who are payees or have sales.
+    // Eligible teachers: those with sales, payees, or teaching roles in any course.
     $teachersql = "SELECT DISTINCT u.id, u.firstname, u.lastname, u.email
                      FROM {user} u
-                     JOIN {local_walletrevenue_payee} p ON p.teacherid = u.id
+                    WHERE u.deleted = 0
+                      AND (
+                          u.id IN (SELECT teacherid FROM {local_walletrevenue_sale} WHERE teacherid > 0)
+                          OR u.id IN (SELECT teacherid FROM {local_walletrevenue_payee} WHERE teacherid > 0)
+                          OR u.id IN (
+                              SELECT ra.userid
+                                FROM {role_assignments} ra
+                                JOIN {context} ctx ON ctx.id = ra.contextid
+                                JOIN {role} r ON r.id = ra.roleid
+                               WHERE ctx.contextlevel = " . CONTEXT_COURSE . "
+                                 AND r.archetype IN ('editingteacher', 'teacher')
+                          )
+                      )
                  ORDER BY u.firstname, u.lastname";
     $teachers = $DB->get_records_sql($teachersql);
 
@@ -83,13 +96,17 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
         }
     }
 
-    $form = new payout_form(null, ['id' => $id, 'teachers' => $teachers]);
-
     $payout = null;
     $draftitemid = file_get_submitted_draft_itemid('proof_filemanager');
 
     if ($id > 0) {
         $payout = $DB->get_record('local_walletrevenue_payout', ['id' => $id], '*', MUST_EXIST);
+        if (!isset($teachers[$payout->teacherid])) {
+            $u = $DB->get_record('user', ['id' => $payout->teacherid]);
+            if ($u) {
+                $teachers[$u->id] = $u;
+            }
+        }
         file_prepare_draft_area(
             $draftitemid,
             $context->id,
@@ -98,6 +115,11 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
             $payout->id,
             ['subdirs' => 0, 'maxfiles' => 5]
         );
+    }
+
+    $form = new payout_form(null, ['id' => $id, 'teachers' => $teachers]);
+
+    if ($id > 0) {
         $payout->proof_filemanager = $draftitemid;
         $form->set_data($payout);
     } else {
@@ -115,8 +137,9 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
         redirect(new moodle_url('/local/walletrevenue/payouts.php'));
     } else if ($data = $form->get_data()) {
         $now = time();
+        $targetteacherid = is_array($data->teacherid) ? (int) reset($data->teacherid) : (int) $data->teacherid;
         if ($id > 0) {
-            $payout->teacherid = $data->teacherid;
+            $payout->teacherid = $targetteacherid;
             $payout->amount = (float) $data->amount;
             $payout->currency = (string) $data->currency;
             $payout->method = (string) $data->method;
@@ -147,7 +170,7 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
             redirect(new moodle_url('/local/walletrevenue/payouts.php'), get_string('changessaved'), null, \core\output\notification::NOTIFY_SUCCESS);
         } else {
             $record = (object) [
-                'teacherid'    => $data->teacherid,
+                'teacherid'    => $targetteacherid,
                 'amount'       => (float) $data->amount,
                 'currency'     => (string) $data->currency,
                 'method'       => (string) $data->method,
@@ -173,7 +196,7 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
             $event = payout_created::create([
                 'context'       => $context,
                 'objectid'      => $newid,
-                'relateduserid' => $data->teacherid,
+                'relateduserid' => $targetteacherid,
             ]);
             $event->trigger();
 

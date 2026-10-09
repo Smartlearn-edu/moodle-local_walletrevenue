@@ -42,12 +42,21 @@ echo $OUTPUT->header();
 
 $teacherid = (int) $USER->id;
 
-// Check if current user is payee of any course or has recorded earnings.
+// Check if current user is payee of any course, has course teacher roles, or has recorded earnings.
 $haspayeecourses = $DB->record_exists('local_walletrevenue_payee', ['teacherid' => $teacherid]);
 $hassales = $DB->record_exists('local_walletrevenue_sale', ['teacherid' => $teacherid]);
 $haspayouts = $DB->record_exists('local_walletrevenue_payout', ['teacherid' => $teacherid]);
+$hasteachercourses = $DB->record_exists_sql("
+    SELECT 1
+      FROM {role_assignments} ra
+      JOIN {context} ctx ON ctx.id = ra.contextid
+      JOIN {role} r ON r.id = ra.roleid
+     WHERE ra.userid = :userid
+       AND ctx.contextlevel = " . CONTEXT_COURSE . "
+       AND r.archetype IN ('editingteacher', 'teacher')
+", ['userid' => $teacherid]);
 
-if (!$haspayeecourses && !$hassales && !$haspayouts) {
+if (!$haspayeecourses && !$hassales && !$haspayouts && !$hasteachercourses) {
     echo $OUTPUT->notification(get_string('notateacher', 'local_walletrevenue'), \core\output\notification::NOTIFY_INFO);
     echo $OUTPUT->footer();
     exit;
