@@ -96,8 +96,18 @@ $allusers = $DB->get_records_sql($alluserssql, ['guestid' => (int) $CFG->sitegue
 // Handle Sync from profile fields.
 if ($action === 'sync') {
     require_sesskey();
-    partner_manager::sync_from_profile_fields();
-    redirect($pageurl, get_string('syncsuccess', 'local_walletrevenue'), null, \core\output\notification::NOTIFY_SUCCESS);
+    $result = partner_manager::sync_from_profile_fields();
+    if ($result['new'] > 0) {
+        $msg = get_string('syncsuccesscount', 'local_walletrevenue', $result['new']);
+        $notif = \core\output\notification::NOTIFY_SUCCESS;
+    } else if ($result['total'] > 0) {
+        $msg = get_string('syncalluptodate', 'local_walletrevenue', $result['total']);
+        $notif = \core\output\notification::NOTIFY_INFO;
+    } else {
+        $msg = get_string('syncnomatches', 'local_walletrevenue');
+        $notif = \core\output\notification::NOTIFY_WARNING;
+    }
+    redirect($pageurl, $msg, null, $notif);
 }
 
 // Handle Delete.

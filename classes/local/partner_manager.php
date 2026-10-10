@@ -209,7 +209,7 @@ class partner_manager {
         }
 
         // Sync with Moodle custom profile field.
-        self::update_teacher_profile_field($teacherid, $partner->code ?: (string) $partner->id);
+        self::update_teacher_profile_field($teacherid, $partner->name);
 
         return true;
     }
@@ -344,44 +344,106 @@ class partner_manager {
     }
 
     /**
-     * Synchronize teacher assignments from Moodle user custom profile fields.
+     * Find a partner by name, code, ID, or user email/username.
+     *
+     * @param string $identifier Partner name, code, ID, or user email.
+     * @return stdClass|null
      */
-    public static function sync_from_profile_fields(): void {
+    public static function find_partner_by_identifier(string $identifier): ?stdClass {
+        global $DB;
+
+        $val = trim($identifier);
+        if ($val === '') {
+            return null;
+        }
+
+        // 1. Match by partner name (case-insensitive).
+        $partner = $DB->get_record_select(
+            'local_walletrevenue_partner',
+            $DB->sql_equal('name', ':name', false),
+            ['name' => $val]
+        );
+        if ($partner) {
+            return $partner;
+        }
+
+        // 2. Match by partner code (case-insensitive).
+        $partner = $DB->get_record_select(
+            'local_walletrevenue_partner',
+            $DB->sql_equal('code', ':code', false),
+            ['code' => $val]
+        );
+        if ($partner) {
+            return $partner;
+        }
+
+        // 3. Match by numeric ID.
+        if (is_numeric($val)) {
+            $partner = $DB->get_record('local_walletrevenue_partner', ['id' => (int) $val]);
+            if ($partner) {
+                return $partner;
+            }
+        }
+
+        // 4. Match by partner user email or username (case-insensitive).
+        $sql = "SELECT p.*
+                  FROM {local_walletrevenue_partner} p
+                  JOIN {user} u ON u.id = p.userid
+                 WHERE " . $DB->sql_equal('u.email', ':email', false) . "
+                    OR " . $DB->sql_equal('u.username', ':uname', false);
+        $partner = $DB->get_record_sql($sql, ['email' => $val, 'uname' => $val]);
+        if ($partner) {
+            return $partner;
+        }
+
+        return null;
+    }
+
+    /**
+     * Synchronize teacher assignments from Moodle user custom profile fields.
+     *
+     * @return array Array with counts: ['new' => int, 'total' => int]
+     */
+    public static function sync_from_profile_fields(): array {
         global $DB;
 
         $shortname = self::get_profile_field_shortname();
         $field = $DB->get_record('user_info_field', ['shortname' => $shortname]);
         if (!$field) {
-            return;
+            return ['new' => 0, 'total' => 0];
         }
 
-        $datas = $DB->get_records_select(
-            'user_info_data',
-            'fieldid = :fid AND ' . $DB->sql_isnotempty('user_info_data', 'data', true, true),
-            ['fid' => $field->id]
-        );
+        $datas = $DB->get_records('user_info_data', ['fieldid' => $field->id]);
+        if (empty($datas)) {
+            return ['new' => 0, 'total' => 0];
+        }
+
+        $newcount = 0;
+        $totalmatched = 0;
 
         foreach ($datas as $d) {
-            $val = trim($d->data);
+            $val = trim((string) ($d->data ?? ''));
             if ($val === '') {
                 continue;
             }
 
-            // Find partner by code or by id.
-            $partner = $DB->get_record('local_walletrevenue_partner', ['code' => $val]);
-            if (!$partner && is_numeric($val)) {
-                $partner = $DB->get_record('local_walletrevenue_partner', ['id' => (int) $val]);
+            $partner = self::find_partner_by_identifier($val);
+            if (!$partner) {
+                continue;
             }
 
-            if ($partner) {
-                $exists = $DB->record_exists('local_walletrevenue_partner_teacher', [
-                    'partnerid' => $partner->id,
-                    'teacherid' => $d->userid,
-                ]);
-                if (!$exists) {
-                    self::assign_teacher((int) $partner->id, (int) $d->userid);
-                }
+            $totalmatched++;
+            $teacherid = (int) $d->userid;
+            $existing = $DB->get_record('local_walletrevenue_partner_teacher', [
+                'teacherid' => $teacherid,
+            ]);
+
+            if (!$existing || (int) $existing->partnerid !== (int) $partner->id) {
+                self::assign_teacher((int) $partner->id, $teacherid);
+                $newcount++;
             }
         }
+
+        return ['new' => $newcount, 'total' => $totalmatched];
     }
 }
