@@ -25,6 +25,7 @@
 require_once(__DIR__ . '/../../config.php');
 
 use local_walletrevenue\local\calculator;
+use local_walletrevenue\local\partner_manager;
 
 require_login();
 if (isguestuser()) {
@@ -41,6 +42,18 @@ $PAGE->set_heading(get_string('myrevenue', 'local_walletrevenue'));
 echo $OUTPUT->header();
 
 $teacherid = (int) $USER->id;
+
+// Check if current user is registered as a partner.
+if (partner_manager::is_partner($teacherid)) {
+    echo html_writer::div(
+        html_writer::link(
+            new moodle_url('/local/walletrevenue/partner.php'),
+            '🏢 ' . get_string('switchtopartnerportal', 'local_walletrevenue'),
+            ['class' => 'btn btn-outline-info mb-3']
+        ),
+        'text-end mb-2'
+    );
+}
 
 // Check if current user is payee of any course, has course teacher roles, or has recorded earnings.
 $haspayeecourses = $DB->record_exists('local_walletrevenue_payee', ['teacherid' => $teacherid]);
@@ -60,6 +73,13 @@ if (!$haspayeecourses && !$hassales && !$haspayouts && !$hasteachercourses) {
     echo $OUTPUT->notification(get_string('notateacher', 'local_walletrevenue'), \core\output\notification::NOTIFY_INFO);
     echo $OUTPUT->footer();
     exit;
+}
+
+// Check if teacher is assigned under a partner organization.
+$assignedpartner = partner_manager::get_partner_for_teacher($teacherid);
+if ($assignedpartner) {
+    $noticemsg = get_string('teacherpartneraffiliationnotice', 'local_walletrevenue', s($assignedpartner->name));
+    echo $OUTPUT->notification($noticemsg, \core\output\notification::NOTIFY_INFO);
 }
 
 // 1. Balance Overview Cards (per currency).

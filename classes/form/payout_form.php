@@ -45,6 +45,26 @@ class payout_form extends moodleform {
         $mform->addElement('hidden', 'action', $action);
         $mform->setType('action', PARAM_ALPHA);
 
+        $partners = $this->_customdata['partners'] ?? [];
+        $recipienttype = $this->_customdata['recipienttype'] ?? 'teacher';
+
+        $recipientoptions = [
+            'teacher' => get_string('recipient_teacher', 'local_walletrevenue'),
+            'partner' => get_string('recipient_partner', 'local_walletrevenue'),
+        ];
+        $mform->addElement('select', 'recipienttype', get_string('recipienttype', 'local_walletrevenue'), $recipientoptions);
+        $mform->setType('recipienttype', PARAM_ALPHA);
+        $mform->setDefault('recipienttype', $recipienttype);
+
+        // Partner selector.
+        $partneroptions = ['' => get_string('selectpartner', 'local_walletrevenue')];
+        foreach ($partners as $p) {
+            $partneroptions[$p->id] = $p->name . ' (' . $p->code . ')';
+        }
+        $mform->addElement('select', 'partnerid', get_string('partner', 'local_walletrevenue'), $partneroptions);
+        $mform->setType('partnerid', PARAM_INT);
+        $mform->hideIf('partnerid', 'recipienttype', 'eq', 'teacher');
+
         // Teacher selector.
         $teacheroptions = [];
         foreach ($teachers as $t) {
@@ -54,7 +74,7 @@ class payout_form extends moodleform {
             'placeholder' => get_string('selectteacher', 'local_walletrevenue'),
         ]);
         $mform->setType('teacherid', PARAM_INT);
-        $mform->addRule('teacherid', null, 'required', null, 'client');
+        $mform->hideIf('teacherid', 'recipienttype', 'eq', 'partner');
 
         // Amount.
         $mform->addElement('text', 'amount', get_string('payoutamount', 'local_walletrevenue'), ['size' => 12]);
@@ -113,12 +133,20 @@ class payout_form extends moodleform {
     public function validation($data, $files): array {
         $errors = parent::validation($data, $files);
 
-        $teacherid = 0;
-        if (!empty($data['teacherid'])) {
-            $teacherid = is_array($data['teacherid']) ? (int) reset($data['teacherid']) : (int) $data['teacherid'];
-        }
-        if ($teacherid <= 0) {
-            $errors['teacherid'] = get_string('required');
+        $recipienttype = $data['recipienttype'] ?? 'teacher';
+        if ($recipienttype === 'partner') {
+            $partnerid = (int) ($data['partnerid'] ?? 0);
+            if ($partnerid <= 0) {
+                $errors['partnerid'] = get_string('required');
+            }
+        } else {
+            $teacherid = 0;
+            if (!empty($data['teacherid'])) {
+                $teacherid = is_array($data['teacherid']) ? (int) reset($data['teacherid']) : (int) $data['teacherid'];
+            }
+            if ($teacherid <= 0) {
+                $errors['teacherid'] = get_string('required');
+            }
         }
 
         $amount = (float) ($data['amount'] ?? 0);

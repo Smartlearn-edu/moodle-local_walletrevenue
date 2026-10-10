@@ -26,6 +26,8 @@ require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/filelib.php');
 
 use local_walletrevenue\form\payout_form;
+use local_walletrevenue\local\calculator;
+use local_walletrevenue\local\partner_manager;
 use local_walletrevenue\local\ui_helper;
 use local_walletrevenue\event\payout_created;
 use local_walletrevenue\event\payout_updated;
@@ -35,11 +37,13 @@ require_login();
 $context = context_system::instance();
 require_capability('local/walletrevenue:managepayouts', $context);
 
-$action    = optional_param('action', '', PARAM_ALPHA);
-$id        = optional_param('id', 0, PARAM_INT);
-$teacherid = optional_param('teacherid', 0, PARAM_INT);
-$currency  = optional_param('currency', '', PARAM_ALPHANUM);
-$amount    = optional_param('amount', 0.0, PARAM_FLOAT);
+$action        = optional_param('action', '', PARAM_ALPHA);
+$id            = optional_param('id', 0, PARAM_INT);
+$teacherid     = optional_param('teacherid', 0, PARAM_INT);
+$recipienttype = optional_param('recipienttype', 'teacher', PARAM_ALPHA);
+$partnerid     = optional_param('partnerid', 0, PARAM_INT);
+$currency      = optional_param('currency', '', PARAM_ALPHANUM);
+$amount        = optional_param('amount', 0.0, PARAM_FLOAT);
 
 $url = new moodle_url('/local/walletrevenue/payouts.php');
 if ($action !== '') {
@@ -127,14 +131,18 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
         );
     }
 
+    $partners = partner_manager::get_all_partners();
+
     $formurl = new moodle_url('/local/walletrevenue/payouts.php', ['action' => $action]);
     if ($id > 0) {
         $formurl->param('id', $id);
     }
     $form = new payout_form($formurl, [
-        'id'       => $id,
-        'action'   => $action,
-        'teachers' => $teachers,
+        'id'            => $id,
+        'action'        => $action,
+        'teachers'      => $teachers,
+        'partners'      => $partners,
+        'recipienttype' => $id > 0 ? ($payout->recipienttype ?? 'teacher') : $recipienttype,
     ]);
 
     if ($id > 0) {
@@ -142,12 +150,24 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
         $form->set_data($payout);
     } else {
         $defaultdata = (object) [
+            'recipienttype'     => $recipienttype,
+            'partnerid'         => $partnerid,
             'teacherid'         => $teacherid,
             'amount'            => $amount > 0 ? $amount : '',
             'currency'          => $currency ?: (get_config('local_walletrevenue', 'defaultcurrency') ?: 'USD'),
             'paidat'            => time(),
             'proof_filemanager' => $draftitemid,
         ];
+        if ($recipienttype === 'partner' && $partnerid > 0 && empty($amount)) {
+            $psummaries = calculator::get_partner_summary($partnerid);
+            if (!empty($psummaries)) {
+                $first = reset($psummaries);
+                if ($first->currentbalance > 0) {
+                    $defaultdata->amount = $first->currentbalance;
+                    $defaultdata->currency = $first->currency;
+                }
+            }
+        }
         $form->set_data($defaultdata);
     }
 
@@ -155,8 +175,23 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
         redirect(new moodle_url('/local/walletrevenue/payouts.php'));
     } else if ($data = $form->get_data()) {
         $now = time();
-        $targetteacherid = is_array($data->teacherid) ? (int) reset($data->teacherid) : (int) $data->teacherid;
+        $targetrecipienttype = $data->recipienttype ?? 'teacher';
+        $targetpartnerid = 0;
+        $targetteacherid = 0;
+
+        if ($targetrecipienttype === 'partner') {
+            $targetpartnerid = (int) ($data->partnerid ?? 0);
+            $partner = partner_manager::get_partner($targetpartnerid);
+            if ($partner) {
+                $targetteacherid = (int) $partner->userid;
+            }
+        } else {
+            $targetteacherid = is_array($data->teacherid) ? (int) reset($data->teacherid) : (int) $data->teacherid;
+        }
+
         if ($id > 0) {
+            $payout->recipienttype = $targetrecipienttype;
+            $payout->partnerid = $targetpartnerid;
             $payout->teacherid = $targetteacherid;
             $payout->amount = (float) $data->amount;
             $payout->currency = (string) $data->currency;
@@ -188,16 +223,18 @@ if ($action === 'add' || ($action === 'edit' && $id > 0)) {
             redirect(new moodle_url('/local/walletrevenue/payouts.php'), get_string('changessaved'), null, \core\output\notification::NOTIFY_SUCCESS);
         } else {
             $record = (object) [
-                'teacherid'    => $targetteacherid,
-                'amount'       => (float) $data->amount,
-                'currency'     => (string) $data->currency,
-                'method'       => (string) $data->method,
-                'reference'    => (string) ($data->reference ?? ''),
-                'notes'        => (string) ($data->notes ?? ''),
-                'paidat'       => (int) $data->paidat,
-                'usermodified' => $USER->id,
-                'timecreated'  => $now,
-                'timemodified' => $now,
+                'recipienttype' => $targetrecipienttype,
+                'partnerid'     => $targetpartnerid,
+                'teacherid'     => $targetteacherid,
+                'amount'        => (float) $data->amount,
+                'currency'      => (string) $data->currency,
+                'method'        => (string) $data->method,
+                'reference'     => (string) ($data->reference ?? ''),
+                'notes'         => (string) ($data->notes ?? ''),
+                'paidat'        => (int) $data->paidat,
+                'usermodified'  => $USER->id,
+                'timecreated'   => $now,
+                'timemodified'  => $now,
             ];
 
             $newid = $DB->insert_record('local_walletrevenue_payout', $record);
@@ -248,7 +285,7 @@ $payouts = $DB->get_records_sql($sql);
 
 $table = new html_table();
 $table->head = [
-    get_string('teacher', 'local_walletrevenue'),
+    get_string('recipient', 'local_walletrevenue'),
     get_string('payoutamount', 'local_walletrevenue'),
     get_string('currency', 'local_walletrevenue'),
     get_string('paymentmethod', 'local_walletrevenue'),
@@ -266,9 +303,19 @@ if (empty($payouts)) {
     echo $OUTPUT->notification(get_string('none'), \core\output\notification::NOTIFY_INFO);
 } else {
     foreach ($payouts as $p) {
-        $teacheruser = \core_user::get_user($p->teacherid);
-        $teacherdisplay = ($teacheruser ? fullname($teacheruser) : '#' . $p->teacherid) .
-            '<br><small class="text-muted">' . s($p->email) . '</small>';
+        if (!empty($p->recipienttype) && $p->recipienttype === 'partner' && !empty($p->partnerid)) {
+            $partner = partner_manager::get_partner((int) $p->partnerid);
+            $partneruser = \core_user::get_user($p->teacherid);
+            $pname = $partner ? s($partner->name) : '#' . $p->partnerid;
+            $badge = '<span class="badge bg-info text-dark ms-1">' . get_string('partner', 'local_walletrevenue') . '</span>';
+            $recipientdisplay = '<strong>' . $pname . '</strong> ' . $badge .
+                '<br><small class="text-muted">' . ($partneruser ? fullname($partneruser) : '') . '</small>';
+        } else {
+            $teacheruser = \core_user::get_user($p->teacherid);
+            $badge = '<span class="badge bg-secondary text-white ms-1">' . get_string('teacher', 'local_walletrevenue') . '</span>';
+            $recipientdisplay = ($teacheruser ? fullname($teacheruser) : '#' . $p->teacherid) . ' ' . $badge .
+                '<br><small class="text-muted">' . s($p->email) . '</small>';
+        }
 
         // Check for attached proof files.
         $files = $fs->get_area_files($context->id, 'local_walletrevenue', 'payout_proof', $p->id, 'filename', false);
@@ -310,7 +357,7 @@ if (empty($payouts)) {
         $notesdisplay = !empty($p->notes) ? s($p->notes) : '<span class="text-muted">-</span>';
 
         $table->data[] = [
-            $teacherdisplay,
+            $recipientdisplay,
             '<strong>' . number_format($p->amount, 2) . '</strong>',
             s($p->currency),
             $methodstr,

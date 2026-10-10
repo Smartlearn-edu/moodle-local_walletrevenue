@@ -31,5 +31,77 @@ defined('MOODLE_INTERNAL') || die();
  * @return bool
  */
 function xmldb_local_walletrevenue_upgrade(int $oldversion): bool {
+    global $DB;
+
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2026101002) {
+        // Define table local_walletrevenue_partner to be created.
+        $table = new xmldb_table('local_walletrevenue_partner');
+
+        // Adding fields to table local_walletrevenue_partner.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('code', XMLDB_TYPE_CHAR, '50', null, null, null, null);
+        $table->add_field('usermodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        // Adding keys to table local_walletrevenue_partner.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('userid_uniq', XMLDB_KEY_UNIQUE, ['userid']);
+
+        // Adding indexes to table local_walletrevenue_partner.
+        $table->add_index('code_idx', XMLDB_INDEX_NOTUNIQUE, ['code']);
+
+        // Conditionally launch create table for local_walletrevenue_partner.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Define table local_walletrevenue_partner_teacher to be created.
+        $teachertable = new xmldb_table('local_walletrevenue_partner_teacher');
+
+        // Adding fields to table local_walletrevenue_partner_teacher.
+        $teachertable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $teachertable->add_field('partnerid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $teachertable->add_field('teacherid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $teachertable->add_field('usermodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $teachertable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        // Adding keys to table local_walletrevenue_partner_teacher.
+        $teachertable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $teachertable->add_key('teacherid_uniq', XMLDB_KEY_UNIQUE, ['teacherid']);
+
+        // Adding indexes to table local_walletrevenue_partner_teacher.
+        $teachertable->add_index('partnerid_idx', XMLDB_INDEX_NOTUNIQUE, ['partnerid']);
+
+        // Conditionally launch create table for local_walletrevenue_partner_teacher.
+        if (!$dbman->table_exists($teachertable)) {
+            $dbman->create_table($teachertable);
+        }
+
+        // Define fields to be added to local_walletrevenue_payout.
+        $payouttable = new xmldb_table('local_walletrevenue_payout');
+        $fieldrecip = new xmldb_field('recipienttype', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'teacher');
+        if (!$dbman->field_exists($payouttable, $fieldrecip)) {
+            $dbman->add_field($payouttable, $fieldrecip);
+        }
+
+        $fieldpartner = new xmldb_field('partnerid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        if (!$dbman->field_exists($payouttable, $fieldpartner)) {
+            $dbman->add_field($payouttable, $fieldpartner);
+        }
+
+        $indexpartner = new xmldb_index('partnerid_idx', XMLDB_INDEX_NOTUNIQUE, ['partnerid']);
+        if (!$dbman->index_exists($payouttable, $indexpartner)) {
+            $dbman->add_index($payouttable, $indexpartner);
+        }
+
+        // Walletrevenue savepoint reached.
+        upgrade_plugin_savepoint(true, 2026101002, 'local', 'walletrevenue');
+    }
+
     return true;
 }

@@ -40,6 +40,7 @@ class ui_helper {
         $tabs = [
             new tabobject('reports', new moodle_url('/local/walletrevenue/index.php'), get_string('reports', 'local_walletrevenue')),
             new tabobject('payees', new moodle_url('/local/walletrevenue/payees.php'), get_string('payees', 'local_walletrevenue')),
+            new tabobject('partners', new moodle_url('/local/walletrevenue/partners.php'), get_string('partners', 'local_walletrevenue')),
             new tabobject('rates', new moodle_url('/local/walletrevenue/rates.php'), get_string('rates', 'local_walletrevenue')),
             new tabobject('payouts', new moodle_url('/local/walletrevenue/payouts.php'), get_string('payouts', 'local_walletrevenue')),
             new tabobject('recalculate', new moodle_url('/local/walletrevenue/recalculate.php'), get_string('recalculate', 'local_walletrevenue')),

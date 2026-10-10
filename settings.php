@@ -57,4 +57,13 @@ if ($hassiteconfig) {
         get_string('includemicropayments_desc', 'local_walletrevenue'),
         1
     ));
+
+    // Custom user profile field shortname for partner affiliation.
+    $settings->add(new admin_setting_configtext(
+        'local_walletrevenue/partner_profile_field',
+        get_string('setting_partner_profile_field', 'local_walletrevenue'),
+        get_string('setting_partner_profile_field_desc', 'local_walletrevenue'),
+        'walletrevenue_partner',
+        PARAM_ALPHANUMEXT
+    ));
 }

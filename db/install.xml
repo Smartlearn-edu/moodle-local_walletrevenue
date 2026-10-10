@@ -79,6 +79,8 @@
         <FIELD NAME="method" TYPE="char" LENGTH="50" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="reference" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="notes" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="recipienttype" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="teacher" SEQUENCE="false" COMMENT="teacher or partner"/>
+        <FIELD NAME="partnerid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Partner ID if recipient is partner"/>
         <FIELD NAME="paidat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
@@ -89,7 +91,44 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="teacherid_idx" UNIQUE="false" FIELDS="teacherid"/>
+        <INDEX NAME="partnerid_idx" UNIQUE="false" FIELDS="partnerid"/>
         <INDEX NAME="paidat_idx" UNIQUE="false" FIELDS="paidat"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="local_walletrevenue_partner" COMMENT="Partner organizations/centers managing groups of teachers">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Organization name"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Moodle user ID of the partner"/>
+        <FIELD NAME="code" TYPE="char" LENGTH="50" NOTNULL="false" SEQUENCE="false" COMMENT="Optional unique slug/code"/>
+        <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid_uniq" TYPE="unique" FIELDS="userid"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="code_idx" UNIQUE="false" FIELDS="code"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="local_walletrevenue_partner_teacher" COMMENT="Mapping of teachers to partners">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="partnerid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Partner ID"/>
+        <FIELD NAME="teacherid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Teacher user ID"/>
+        <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="teacherid_uniq" TYPE="unique" FIELDS="teacherid"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="partnerid_idx" UNIQUE="false" FIELDS="partnerid"/>
       </INDEXES>
     </TABLE>
   </TABLES>
