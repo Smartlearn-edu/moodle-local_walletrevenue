@@ -34,11 +34,13 @@ class partner_form extends moodleform {
     protected function definition(): void {
         $mform = $this->_form;
         $users = $this->_customdata['users'] ?? [];
+        $action = $this->_customdata['action'] ?? 'add';
+        $partnerid = (int) ($this->_customdata['id'] ?? 0);
 
-        $mform->addElement('hidden', 'id', 0);
+        $mform->addElement('hidden', 'id', $partnerid);
         $mform->setType('id', PARAM_INT);
 
-        $mform->addElement('hidden', 'action', 'save');
+        $mform->addElement('hidden', 'action', $action);
         $mform->setType('action', PARAM_ALPHA);
 
         $mform->addElement('text', 'name', get_string('partnername', 'local_walletrevenue'), ['size' => '40']);

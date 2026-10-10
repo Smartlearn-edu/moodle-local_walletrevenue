@@ -35,7 +35,7 @@ function xmldb_local_walletrevenue_upgrade(int $oldversion): bool {
 
     $dbman = $DB->get_manager();
 
-    if ($oldversion < 2026101002) {
+    if ($oldversion < 2026101004) {
         // Define table local_walletrevenue_partner to be created.
         $table = new xmldb_table('local_walletrevenue_partner');
 
@@ -100,7 +100,7 @@ function xmldb_local_walletrevenue_upgrade(int $oldversion): bool {
         }
 
         // Walletrevenue savepoint reached.
-        upgrade_plugin_savepoint(true, 2026101002, 'local', 'walletrevenue');
+        upgrade_plugin_savepoint(true, 2026101004, 'local', 'walletrevenue');
     }
 
     return true;

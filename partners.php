@@ -36,9 +36,26 @@ require_capability('local/walletrevenue:manageconfig', $context);
 
 $action = optional_param('action', '', PARAM_ALPHA);
 $id = optional_param('id', 0, PARAM_INT);
+if ($id <= 0) {
+    $id = optional_param('partnerid', 0, PARAM_INT);
+}
+
+// Normalize action if posted from form.
+if ($action === 'save') {
+    $action = $id > 0 ? 'edit' : 'add';
+} else if ($action === 'saveassign') {
+    $action = 'assign';
+}
 
 $pageurl = new moodle_url('/local/walletrevenue/partners.php');
-$PAGE->set_url($pageurl);
+$url = new moodle_url('/local/walletrevenue/partners.php');
+if ($action !== '') {
+    $url->param('action', $action);
+}
+if ($id > 0) {
+    $url->param('id', $id);
+}
+$PAGE->set_url($url);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('partners', 'local_walletrevenue'));
 $PAGE->set_heading(get_string('partners', 'local_walletrevenue'));
@@ -69,15 +86,12 @@ $teachersql = "SELECT DISTINCT u.id, u.email {$userfields}
 $eligibleteachers = $DB->get_records_sql($teachersql, ['guestid' => (int) $CFG->siteguest]);
 
 // All active non-guest users for partner accounts.
-$allusers = $DB->get_records_select(
-    'user',
-    'deleted = 0 AND id <> :guestid',
-    ['guestid' => (int) $CFG->siteguest],
-    'firstname ASC, lastname ASC',
-    'id, email, firstname, lastname',
-    0,
-    500
-);
+$alluserssql = "SELECT DISTINCT u.id, u.email {$userfields}
+                  FROM {user} u
+                 WHERE u.deleted = 0
+                   AND u.id <> :guestid
+              ORDER BY u.firstname, u.lastname";
+$allusers = $DB->get_records_sql($alluserssql, ['guestid' => (int) $CFG->siteguest], 0, 500);
 
 // Handle Sync from profile fields.
 if ($action === 'sync') {
@@ -103,7 +117,15 @@ if ($action === 'add' || $action === 'edit') {
         }
     }
 
-    $form = new partner_form(null, ['users' => $allusers]);
+    $formurl = new moodle_url('/local/walletrevenue/partners.php', ['action' => $action]);
+    if ($id > 0) {
+        $formurl->param('id', $id);
+    }
+    $form = new partner_form($formurl, [
+        'users'  => $allusers,
+        'action' => $action,
+        'id'     => $id,
+    ]);
     if ($existing) {
         $form->set_data($existing);
     }
@@ -111,8 +133,9 @@ if ($action === 'add' || $action === 'edit') {
     if ($form->is_cancelled()) {
         redirect($pageurl);
     } else if ($data = $form->get_data()) {
-        if ($data->id > 0) {
-            partner_manager::update_partner((int) $data->id, $data->name, (int) $data->userid, $data->code ?? '');
+        $targetid = (int) ($data->id ?? $id);
+        if ($targetid > 0) {
+            partner_manager::update_partner($targetid, $data->name, (int) $data->userid, $data->code ?? '');
             $msg = get_string('partnerupdated', 'local_walletrevenue');
         } else {
             partner_manager::create_partner($data->name, (int) $data->userid, $data->code ?? '');
@@ -139,9 +162,11 @@ if ($action === 'assign' && $id > 0) {
         throw new moodle_exception('invalidpartnerid', 'local_walletrevenue');
     }
 
-    $form = new partner_assign_form(null, [
+    $formurl = new moodle_url('/local/walletrevenue/partners.php', ['action' => 'assign', 'id' => $id]);
+    $form = new partner_assign_form($formurl, [
         'partnerid' => $id,
         'teachers'  => $eligibleteachers,
+        'action'    => 'assign',
     ]);
 
     $currentteachers = partner_manager::get_teacher_ids_for_partner($id);

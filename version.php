@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026101003;
+$plugin->version = 2026101004;
 $plugin->requires = 2025041400; // Requires Moodle 5.0+.
 $plugin->component = 'local_walletrevenue';
 $plugin->maturity = MATURITY_ALPHA;

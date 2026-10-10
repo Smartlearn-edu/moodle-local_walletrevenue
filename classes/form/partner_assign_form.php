@@ -35,11 +35,15 @@ class partner_assign_form extends moodleform {
         $mform = $this->_form;
         $partnerid = (int) ($this->_customdata['partnerid'] ?? 0);
         $teachers = $this->_customdata['teachers'] ?? [];
+        $action = $this->_customdata['action'] ?? 'assign';
+
+        $mform->addElement('hidden', 'id', $partnerid);
+        $mform->setType('id', PARAM_INT);
 
         $mform->addElement('hidden', 'partnerid', $partnerid);
         $mform->setType('partnerid', PARAM_INT);
 
-        $mform->addElement('hidden', 'action', 'saveassign');
+        $mform->addElement('hidden', 'action', $action);
         $mform->setType('action', PARAM_ALPHA);
 
         $options = [];
