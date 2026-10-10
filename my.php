@@ -73,7 +73,7 @@ foreach ($summaries as $s) {
     echo '<div class="col-md-4 mb-3">';
     echo '<div class="card shadow-sm ' . $balancecolor . '">';
     echo '<div class="card-body">';
-    echo '<h5 class="card-title text-muted">' . s($s->currency) . ' Balance</h5>';
+    echo '<h5 class="card-title text-muted">' . get_string('currencybalance', 'local_walletrevenue', s($s->currency)) . '</h5>';
     echo '<h2 class="card-text text-success font-weight-bold">' . number_format($s->currentbalance, 2) . ' ' . s($s->currency) . '</h2>';
     echo '<hr>';
     echo '<div class="d-flex justify-content-between text-muted small">';

@@ -106,12 +106,12 @@ if ($data = $form->get_data()) {
             $table->head = [
                 get_string('date'),
                 get_string('course', 'local_walletrevenue'),
-                get_string('amount', 'enrol_wallet'),
-                'Old rate %',
-                'New rate %',
-                'Old share',
-                'New share',
-                'Difference',
+                get_string('amount', 'local_walletrevenue'),
+                get_string('oldrate', 'local_walletrevenue'),
+                get_string('newrate', 'local_walletrevenue'),
+                get_string('oldshare', 'local_walletrevenue'),
+                get_string('newshare', 'local_walletrevenue'),
+                get_string('difference', 'local_walletrevenue'),
             ];
             $table->attributes['class'] = 'generaltable';
 
@@ -129,9 +129,9 @@ if ($data = $form->get_data()) {
             }
             echo html_writer::table($table);
 
+            $impactformatted = ($totaldiff >= 0 ? '+' : '') . number_format($totaldiff, 2);
             echo $OUTPUT->box(
-                '<strong>Total net impact on teacher share:</strong> ' .
-                ($totaldiff >= 0 ? '+' : '') . number_format($totaldiff, 2),
+                '<strong>' . get_string('totalnetimpact', 'local_walletrevenue', $impactformatted) . '</strong>',
                 'alert alert-warning mb-3'
             );
         }
@@ -142,7 +142,10 @@ if ($data = $form->get_data()) {
         ]);
         $event->trigger();
 
-        echo $OUTPUT->notification("Successfully recalculated {$updatedcount} sale record(s).", \core\output\notification::NOTIFY_SUCCESS);
+        echo $OUTPUT->notification(
+            get_string('recalculatesuccess', 'local_walletrevenue', $updatedcount),
+            \core\output\notification::NOTIFY_SUCCESS
+        );
     }
 }
 

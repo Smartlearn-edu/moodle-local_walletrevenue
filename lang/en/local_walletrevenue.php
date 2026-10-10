@@ -138,3 +138,18 @@ $string['privacy:metadata:payout:teacherid'] = 'The teacher who received the pay
 $string['privacy:metadata:payout:amount'] = 'The amount paid out.';
 $string['privacy:metadata:payout:method'] = 'The payment method used.';
 $string['privacy:metadata:payout:reference'] = 'The transaction reference number.';
+
+// Additional UI and recalculation strings.
+$string['currencybalance'] = '{$a} Balance';
+$string['ratesource_course'] = 'Course override';
+$string['ratesource_teacher'] = 'Teacher override';
+$string['ratesource_global'] = 'Global default';
+$string['amount'] = 'Amount';
+$string['oldrate'] = 'Old rate %';
+$string['newrate'] = 'New rate %';
+$string['oldshare'] = 'Old share';
+$string['newshare'] = 'New share';
+$string['difference'] = 'Difference';
+$string['totalnetimpact'] = 'Total net impact on teacher share: {$a}';
+$string['recalculatesuccess'] = 'Successfully recalculated {$a} sale record(s).';
+$string['confirmdeleterate'] = 'Are you sure you want to delete this commission rate override?';

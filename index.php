@@ -96,12 +96,15 @@ if ($view === 'courses' && $teacherid >= 0) {
         echo $OUTPUT->notification(get_string('none'), \core\output\notification::NOTIFY_INFO);
     } else {
         foreach ($courses as $c) {
+            $sourcestr = get_string_manager()->string_exists('ratesource_' . $c->ratesource, 'local_walletrevenue')
+                ? get_string('ratesource_' . $c->ratesource, 'local_walletrevenue')
+                : s($c->ratesource);
             $table->data[] = [
                 format_string($c->coursename) . ' (' . s($c->courseshortname) . ')',
                 number_format($c->listprice, 2) . ' ' . s($c->currency),
                 $c->studentcount,
                 number_format($c->totalsales, 2) . ' ' . s($c->currency),
-                $c->appliedrate . '% <small class="text-muted">(' . $c->ratesource . ')</small>',
+                $c->appliedrate . '% <small class="text-muted">(' . $sourcestr . ')</small>',
                 '<strong>' . number_format($c->teachershare, 2) . ' ' . s($c->currency) . '</strong>',
             ];
         }

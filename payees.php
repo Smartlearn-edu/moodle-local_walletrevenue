@@ -106,13 +106,20 @@ if (empty($courses)) {
             $sourcetag = $teacherinfo['source'] === 'manual'
                 ? '<span class="badge bg-primary text-white ms-1">' . get_string('manualoverride', 'local_walletrevenue') . '</span>'
                 : '<span class="badge bg-secondary text-white ms-1">' . get_string('autodetected', 'local_walletrevenue') . '</span>';
-            $teacherdisplay = fullname($userobj) . ' (' . s($userobj->email) . ') ' . $sourcetag;
+            $name = $userobj ? fullname($userobj) : '#' . $teacherid;
+            $email = ($userobj && !empty($userobj->email))
+                ? '<br><small class="text-muted">' . s($userobj->email) . '</small>'
+                : '';
+            $teacherdisplay = $name . ' ' . $sourcetag . $email;
         } else {
             $teacherdisplay = '<span class="badge bg-warning text-dark">' . get_string('noteacherfound', 'local_walletrevenue') . '</span>';
         }
 
         $rateinfo = rate_resolver::get_rate_info($c->id, $teacherid);
-        $ratedisplay = $rateinfo['percent'] . '% <small class="text-muted">(' . $rateinfo['source'] . ')</small>';
+        $sourcestr = get_string_manager()->string_exists('ratesource_' . $rateinfo['source'], 'local_walletrevenue')
+            ? get_string('ratesource_' . $rateinfo['source'], 'local_walletrevenue')
+            : s($rateinfo['source']);
+        $ratedisplay = $rateinfo['percent'] . '% <small class="text-muted">(' . $sourcestr . ')</small>';
 
         $editurl = new moodle_url('/local/walletrevenue/payees.php', [
             'courseid' => $c->id,

@@ -94,13 +94,13 @@ if (empty($overrides)) {
         if ($ov->scope === rate_resolver::SCOPE_COURSE) {
             $course = $DB->get_record('course', ['id' => $ov->itemid]);
             if ($course) {
-                $name = format_string($course->fullname) . ' (' . s($course->shortname) . ')';
+                $name = format_string($course->fullname) . '<br><small class="text-muted">' . s($course->shortname) . '</small>';
             }
             $scopestr = get_string('rate_scope_course', 'local_walletrevenue');
         } else {
             $user = $DB->get_record('user', ['id' => $ov->itemid]);
             if ($user) {
-                $name = fullname($user) . ' (' . s($user->email) . ')';
+                $name = fullname($user) . '<br><small class="text-muted">' . s($user->email) . '</small>';
             }
             $scopestr = get_string('rate_scope_teacher', 'local_walletrevenue');
         }
@@ -113,7 +113,7 @@ if (empty($overrides)) {
         $deleteaction = html_writer::link(
             $deleteurl,
             get_string('delete'),
-            ['class' => 'btn btn-sm btn-outline-danger', 'onclick' => 'return confirm("' . get_string('delete') . '?");']
+            ['class' => 'btn btn-sm btn-outline-danger', 'onclick' => 'return confirm("' . get_string('confirmdeleterate', 'local_walletrevenue') . '");']
         );
 
         $table->data[] = [

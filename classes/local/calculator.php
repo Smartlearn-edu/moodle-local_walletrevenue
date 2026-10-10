@@ -93,8 +93,9 @@ class calculator {
 
         // Sort by teacher name.
         usort($results, function ($a, $b) {
-            $namea = $a->teacheruser ? fullname($a->teacheruser) : 'Unassigned';
-            $nameb = $b->teacheruser ? fullname($b->teacheruser) : 'Unassigned';
+            $unassigned = get_string('nopayeeassigned', 'local_walletrevenue');
+            $namea = $a->teacheruser ? fullname($a->teacheruser) : $unassigned;
+            $nameb = $b->teacheruser ? fullname($b->teacheruser) : $unassigned;
             return strcmp($namea, $nameb);
         });
 
