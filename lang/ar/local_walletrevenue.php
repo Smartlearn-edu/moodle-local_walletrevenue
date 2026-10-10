@@ -200,3 +200,6 @@ $string['setting_partner_profile_field_desc'] = 'الاسم المختصر لح�
 $string['partner_profile_field_label'] = 'الجهة الشريكة / المركز التابع له';
 $string['partner_profile_field_desc'] = 'رمز أو معرف المركز الشريك لتجميع الأرباح المالية.';
 $string['earned'] = 'المكتسب';
+$string['teachers'] = 'معلمين';
+$string['courses'] = 'المقررات الدراسية';
+$string['payout'] = 'صرف المستحقات';

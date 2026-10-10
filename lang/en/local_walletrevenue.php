@@ -200,3 +200,6 @@ $string['setting_partner_profile_field_desc'] = 'The shortname of the custom use
 $string['partner_profile_field_label'] = 'Affiliated Partner / Organization';
 $string['partner_profile_field_desc'] = 'Partner organization code or ID for revenue aggregation.';
 $string['earned'] = 'Earned';
+$string['teachers'] = 'Teachers';
+$string['courses'] = 'Courses';
+$string['payout'] = 'Payout';
