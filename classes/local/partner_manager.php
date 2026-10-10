@@ -423,7 +423,16 @@ class partner_manager {
 
         foreach ($datas as $d) {
             $val = trim((string) ($d->data ?? ''));
+            $teacherid = (int) $d->userid;
+
+            // If profile field is cleared, remove existing assignment if any.
             if ($val === '') {
+                $existing = $DB->get_record('local_walletrevenue_partner_teacher', [
+                    'teacherid' => $teacherid,
+                ]);
+                if ($existing) {
+                    self::unassign_teacher($teacherid);
+                }
                 continue;
             }
 
@@ -432,8 +441,19 @@ class partner_manager {
                 continue;
             }
 
+            // A partner account is the organization owner/manager, not an affiliated teacher under themselves.
+            if ($teacherid === (int) $partner->userid) {
+                $existing = $DB->get_record('local_walletrevenue_partner_teacher', [
+                    'teacherid' => $teacherid,
+                    'partnerid' => (int) $partner->id,
+                ]);
+                if ($existing) {
+                    self::unassign_teacher($teacherid);
+                }
+                continue;
+            }
+
             $totalmatched++;
-            $teacherid = (int) $d->userid;
             $existing = $DB->get_record('local_walletrevenue_partner_teacher', [
                 'teacherid' => $teacherid,
             ]);
