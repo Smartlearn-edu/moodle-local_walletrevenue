@@ -36,6 +36,7 @@ $context = context_system::instance();
 require_capability('local/walletrevenue:viewpartner', $context);
 
 $partnerid = optional_param('partnerid', 0, PARAM_INT);
+$source = optional_param('source', '', PARAM_ALPHAEXT);
 $canviewall = has_capability('local/walletrevenue:viewall', $context);
 
 if ($canviewall && $partnerid > 0) {
@@ -44,7 +45,14 @@ if ($canviewall && $partnerid > 0) {
     $partner = partner_manager::get_partner_by_user((int) $USER->id);
 }
 
-$PAGE->set_url(new moodle_url('/local/walletrevenue/partner.php', $partnerid > 0 ? ['partnerid' => $partnerid] : []));
+$pageparams = [];
+if ($partnerid > 0) {
+    $pageparams['partnerid'] = $partnerid;
+}
+if (!empty($source)) {
+    $pageparams['source'] = $source;
+}
+$PAGE->set_url(new moodle_url('/local/walletrevenue/partner.php', $pageparams));
 $PAGE->set_context($context);
 
 if (!$partner) {
@@ -83,8 +91,32 @@ echo html_writer::end_div();
 // Informative Notice.
 echo $OUTPUT->notification(get_string('partnerportalnotice', 'local_walletrevenue'), \core\output\notification::NOTIFY_INFO);
 
+// Source filter buttons.
+$sourceoptions = [
+    ''             => get_string('source_all', 'local_walletrevenue'),
+    'wallet'       => get_string('source_wallet', 'local_walletrevenue'),
+    'core_payment' => get_string('source_core_payment', 'local_walletrevenue'),
+];
+echo html_writer::start_div('mb-3');
+echo html_writer::tag('span', get_string('source', 'local_walletrevenue') . ': ', ['class' => 'me-2 fw-bold text-muted']);
+echo html_writer::start_div('btn-group btn-group-sm', ['role' => 'group']);
+foreach ($sourceoptions as $optval => $optlabel) {
+    $btnparams = [];
+    if ($partnerid > 0) {
+        $btnparams['partnerid'] = $partnerid;
+    }
+    if (!empty($optval)) {
+        $btnparams['source'] = $optval;
+    }
+    $btnurl = new moodle_url('/local/walletrevenue/partner.php', $btnparams);
+    $activeclass = ($source === $optval) ? 'btn-primary' : 'btn-outline-secondary';
+    echo html_writer::link($btnurl, $optlabel, ['class' => 'btn ' . $activeclass]);
+}
+echo html_writer::end_div();
+echo html_writer::end_div();
+
 // 1. Balance Overview Cards (per currency).
-$summaries = calculator::get_partner_summary($partner->id);
+$summaries = calculator::get_partner_summary($partner->id, 0, 0, $source);
 echo $OUTPUT->heading(get_string('myearnings', 'local_walletrevenue'), 4);
 
 if (empty($summaries)) {
@@ -120,7 +152,7 @@ if (empty($summaries)) {
 
 // 2. Affiliated Teachers Breakdown Table.
 echo $OUTPUT->heading(get_string('assignedteachers', 'local_walletrevenue'), 4);
-$teachers = calculator::get_partner_teachers($partner->id);
+$teachers = calculator::get_partner_teachers($partner->id, 0, 0, $source);
 
 $teachertable = new html_table();
 $teachertable->head = [
@@ -153,7 +185,7 @@ if (empty($teachers)) {
 
 // 3. Monetized Courses Table.
 echo $OUTPUT->heading(get_string('courses', 'local_walletrevenue'), 4);
-$courses = calculator::get_partner_courses($partner->id);
+$courses = calculator::get_partner_courses($partner->id, 0, 0, $source);
 
 $coursetable = new html_table();
 $coursetable->head = [

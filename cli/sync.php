@@ -30,7 +30,12 @@ require_once($CFG->libdir . '/clilib.php');
 use local_walletrevenue\local\sale_sync;
 
 cli_heading('local_walletrevenue Sync');
-cli_writeln("Synchronizing pending wallet transactions...");
+cli_writeln("Synchronizing pending revenue transactions...");
 
-$count = sale_sync::sync_all_pending();
-cli_writeln("Sync complete. Processed {$count} transaction record(s).");
+$walletcount = sale_sync::sync_pending_wallet_transactions();
+$paymentcount = sale_sync::sync_pending_core_payments();
+$total = $walletcount + $paymentcount;
+
+cli_writeln("Sync complete. Processed {$total} transaction record(s).");
+cli_writeln(" - Wallet transactions: {$walletcount}");
+cli_writeln(" - Core payment gateway transactions: {$paymentcount}");

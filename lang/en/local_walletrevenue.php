@@ -41,6 +41,17 @@ $string['defaultcurrency'] = 'Default currency';
 $string['defaultcurrency_desc'] = 'Standard 3-letter currency code (e.g. USD, EUR) for reports and payouts.';
 $string['includemicropayments'] = 'Include micro-payments';
 $string['includemicropayments_desc'] = 'Include availability_wallet activity and section access payments in course revenue.';
+$string['enablewalletsync'] = 'Enable wallet transactions sync';
+$string['enablewalletsync_desc'] = 'Synchronize course sales, micro-payments, and refunds from the enrol_wallet plugin.';
+$string['enablepaymentsync'] = 'Enable core payment gateway sync';
+$string['enablepaymentsync_desc'] = 'Synchronize course sales processed via Moodle core payment gateways (e.g. PayPal, Stripe via enrol_fee).';
+$string['source'] = 'Revenue source';
+$string['source_all'] = 'All sources';
+$string['source_wallet'] = 'Wallet';
+$string['source_core_payment'] = 'Core payment gateway';
+$string['gateway'] = 'Payment gateway';
+$string['filtersource'] = 'Filter by source';
+$string['cli_option_source'] = 'Filter synchronization by source (all, wallet, payment). Default: all';
 
 // Navigation & tabs.
 $string['reports'] = 'Revenue reports';
@@ -133,6 +144,8 @@ $string['privacy:metadata:sale:studentid'] = 'The student who purchased the enro
 $string['privacy:metadata:sale:teacherid'] = 'The teacher receiving revenue share.';
 $string['privacy:metadata:sale:amount'] = 'The net amount paid.';
 $string['privacy:metadata:sale:teachershare'] = 'The calculated teacher share.';
+$string['privacy:metadata:sale:source'] = 'The originating system of the transaction (wallet or core_payment).';
+$string['privacy:metadata:sale:gateway'] = 'The payment gateway or method used for the transaction.';
 $string['privacy:metadata:payout'] = 'Financial payout transfers recorded for teachers.';
 $string['privacy:metadata:payout:teacherid'] = 'The teacher who received the payout.';
 $string['privacy:metadata:payout:amount'] = 'The amount paid out.';

@@ -32,20 +32,25 @@ use local_walletrevenue\local\sale_sync;
 [$options, $unrecognized] = cli_get_params([
     'help'    => false,
     'execute' => false,
+    'source'  => 'all',
 ], [
     'h' => 'help',
+    's' => 'source',
 ]);
 
 if ($options['help']) {
     $help = <<<EOF
-CLI tool to import historical enrol_wallet transactions created prior to local_walletrevenue installation.
+CLI tool to import historical transactions created prior to local_walletrevenue installation.
 
 Options:
  -h, --help            Print out this help.
+ -s, --source=STRING   Source to backfill ('all', 'wallet', 'payment'). Default: 'all'.
  --execute             Execute the backfill. Without this flag, script only previews.
 
-Example:
+Examples:
 \$ php local/walletrevenue/cli/backfill.php --execute
+\$ php local/walletrevenue/cli/backfill.php --source=payment --execute
+\$ php local/walletrevenue/cli/backfill.php --source=wallet --execute
 
 EOF;
     echo $help;
@@ -54,11 +59,32 @@ EOF;
 
 cli_heading('local_walletrevenue Historical Data Backfill');
 
+$source = strtolower((string) $options['source']);
+if (!in_array($source, ['all', 'wallet', 'payment'], true)) {
+    cli_error("Invalid source '{$source}'. Allowed sources: 'all', 'wallet', 'payment'.");
+}
+
 if (!$options['execute']) {
-    cli_writeln("Dry run mode: Specify --execute to import historical transactions.");
+    cli_writeln("Dry run mode: Specify --execute to import historical transactions for source: '{$source}'.");
     exit(0);
 }
 
-cli_writeln("Starting historical backfill starting from transaction ID 0...");
-$count = sale_sync::sync_all_pending(0);
-cli_writeln("Backfill complete. Imported {$count} transaction record(s).");
+cli_writeln("Starting historical backfill starting from transaction ID 0 for source: '{$source}'...");
+
+$walletcount = 0;
+$paymentcount = 0;
+
+if ($source === 'all' || $source === 'wallet') {
+    cli_writeln("Syncing historical wallet transactions...");
+    $walletcount = sale_sync::sync_pending_wallet_transactions(0);
+    cli_writeln("Imported {$walletcount} wallet transaction record(s).");
+}
+
+if ($source === 'all' || $source === 'payment') {
+    cli_writeln("Syncing historical core payment gateway transactions...");
+    $paymentcount = sale_sync::sync_pending_core_payments(0);
+    cli_writeln("Imported {$paymentcount} core payment gateway record(s).");
+}
+
+$total = $walletcount + $paymentcount;
+cli_writeln("Backfill complete. Total imported: {$total} record(s).");

@@ -58,6 +58,22 @@ if ($hassiteconfig) {
         1
     ));
 
+    // Enable wallet transactions synchronization.
+    $settings->add(new admin_setting_configcheckbox(
+        'local_walletrevenue/enablewalletsync',
+        get_string('enablewalletsync', 'local_walletrevenue'),
+        get_string('enablewalletsync_desc', 'local_walletrevenue'),
+        1
+    ));
+
+    // Enable Moodle core payment gateway synchronization.
+    $settings->add(new admin_setting_configcheckbox(
+        'local_walletrevenue/enablepaymentsync',
+        get_string('enablepaymentsync', 'local_walletrevenue'),
+        get_string('enablepaymentsync_desc', 'local_walletrevenue'),
+        1
+    ));
+
     // Custom user profile field shortname for partner affiliation.
     $settings->add(new admin_setting_configtext(
         'local_walletrevenue/partner_profile_field',

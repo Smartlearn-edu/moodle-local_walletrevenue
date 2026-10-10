@@ -30,4 +30,9 @@ $observers = [
         'callback'    => '\local_walletrevenue\observer::transaction_triggered',
         'internal'    => false,
     ],
+    [
+        'eventname'   => '\core\event\user_enrolment_created',
+        'callback'    => '\local_walletrevenue\observer::user_enrolment_created',
+        'internal'    => false,
+    ],
 ];

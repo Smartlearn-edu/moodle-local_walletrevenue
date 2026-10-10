@@ -43,7 +43,9 @@ class sync_sales extends scheduled_task {
      */
     public function execute(): void {
         mtrace('Starting local_walletrevenue sales synchronization...');
-        $count = sale_sync::sync_all_pending();
-        mtrace("Synchronization complete. Processed {$count} transaction(s).");
+        $walletcount = sale_sync::sync_pending_wallet_transactions();
+        $paymentcount = sale_sync::sync_pending_core_payments();
+        $total = $walletcount + $paymentcount;
+        mtrace("Synchronization complete. Processed {$total} transaction(s) (Wallet: {$walletcount}, Core payment: {$paymentcount}).");
     }
 }

@@ -34,6 +34,7 @@ require_capability('local/walletrevenue:viewall', $context);
 $view        = optional_param('view', 'summary', PARAM_ALPHA);
 $teacherid   = optional_param('teacherid', 0, PARAM_INT);
 $currency    = optional_param('currency', '', PARAM_ALPHANUM);
+$source      = optional_param('source', '', PARAM_ALPHAEXT);
 $timestart   = optional_param('timestart', 0, PARAM_INT);
 $timeend     = optional_param('timeend', 0, PARAM_INT);
 
@@ -46,6 +47,9 @@ if ($teacherid) {
 }
 if ($currency) {
     $url->param('currency', $currency);
+}
+if (!empty($source)) {
+    $url->param('source', $source);
 }
 if ($timestart) {
     $url->param('timestart', $timestart);
@@ -79,7 +83,24 @@ if ($view === 'courses' && $teacherid >= 0) {
     );
     echo $OUTPUT->heading(get_string('mycourses', 'local_walletrevenue') . ': ' . $teachername, 3);
 
-    $courses = calculator::get_teacher_courses($teacherid, $currency, $timestart, $timeend);
+    // Source filter buttons for course drill-down.
+    $sourceoptions = [
+        ''             => get_string('source_all', 'local_walletrevenue'),
+        'wallet'       => get_string('source_wallet', 'local_walletrevenue'),
+        'core_payment' => get_string('source_core_payment', 'local_walletrevenue'),
+    ];
+    echo html_writer::start_div('mb-3');
+    echo html_writer::tag('span', get_string('source', 'local_walletrevenue') . ': ', ['class' => 'me-2 fw-bold text-muted']);
+    echo html_writer::start_div('btn-group btn-group-sm', ['role' => 'group']);
+    foreach ($sourceoptions as $optval => $optlabel) {
+        $btnurl = new moodle_url($PAGE->url, ['source' => $optval]);
+        $activeclass = ($source === $optval) ? 'btn-primary' : 'btn-outline-secondary';
+        echo html_writer::link($btnurl, $optlabel, ['class' => 'btn ' . $activeclass]);
+    }
+    echo html_writer::end_div();
+    echo html_writer::end_div();
+
+    $courses = calculator::get_teacher_courses($teacherid, $currency, $timestart, $timeend, $source);
 
     $table = new html_table();
     $table->head = [
@@ -118,7 +139,24 @@ if ($view === 'courses' && $teacherid >= 0) {
 // Main Teacher Summary Report.
 echo $OUTPUT->heading(get_string('reports', 'local_walletrevenue'), 3);
 
-$summaries = calculator::get_teachers_summary($timestart, $timeend, $teacherid, $currency);
+// Source filter buttons for main summary.
+$sourceoptions = [
+    ''             => get_string('source_all', 'local_walletrevenue'),
+    'wallet'       => get_string('source_wallet', 'local_walletrevenue'),
+    'core_payment' => get_string('source_core_payment', 'local_walletrevenue'),
+];
+echo html_writer::start_div('mb-3');
+echo html_writer::tag('span', get_string('source', 'local_walletrevenue') . ': ', ['class' => 'me-2 fw-bold text-muted']);
+echo html_writer::start_div('btn-group btn-group-sm', ['role' => 'group']);
+foreach ($sourceoptions as $optval => $optlabel) {
+    $btnurl = new moodle_url($PAGE->url, ['source' => $optval]);
+    $activeclass = ($source === $optval) ? 'btn-primary' : 'btn-outline-secondary';
+    echo html_writer::link($btnurl, $optlabel, ['class' => 'btn ' . $activeclass]);
+}
+echo html_writer::end_div();
+echo html_writer::end_div();
+
+$summaries = calculator::get_teachers_summary($timestart, $timeend, $teacherid, $currency, $source);
 
 $table = new html_table();
 $table->head = [
@@ -151,6 +189,7 @@ if (empty($summaries)) {
             'view'      => 'courses',
             'teacherid' => $row->teacherid,
             'currency'  => $row->currency,
+            'source'    => $source,
             'timestart' => $timestart,
             'timeend'   => $timeend,
         ]);

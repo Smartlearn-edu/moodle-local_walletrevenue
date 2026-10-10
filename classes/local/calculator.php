@@ -31,13 +31,15 @@ class calculator {
      * @param int $timeend Filter end timestamp (0 for all time).
      * @param int $filterteacher Filter by specific teacher ID (0 for all).
      * @param string $filtercurrency Filter by currency code (empty for all).
+     * @param string $filtersource Filter by revenue source ('wallet', 'core_payment', or empty for all).
      * @return array Array of summary objects per teacher and currency.
      */
     public static function get_teachers_summary(
         int $timestart = 0,
         int $timeend = 0,
         int $filterteacher = 0,
-        string $filtercurrency = ''
+        string $filtercurrency = '',
+        string $filtersource = ''
     ): array {
         global $DB;
 
@@ -45,10 +47,10 @@ class calculator {
         payee_resolver::resolve_all_unassigned_sales();
 
         // 1. Fetch lifetime teacher shares and all-time transferred to compute current balance accurately.
-        $lifetime = self::get_lifetime_balances($filterteacher, $filtercurrency);
+        $lifetime = self::get_lifetime_balances($filterteacher, $filtercurrency, $filtersource);
 
         // 2. Fetch period sales and shares.
-        $periodsales = self::get_period_sales($timestart, $timeend, $filterteacher, $filtercurrency);
+        $periodsales = self::get_period_sales($timestart, $timeend, $filterteacher, $filtercurrency, $filtersource);
 
         // 3. Fetch period payouts.
         $periodpayouts = self::get_period_payouts($timestart, $timeend, $filterteacher, $filtercurrency);
@@ -109,13 +111,15 @@ class calculator {
      * @param string $currency Currency code.
      * @param int $timestart Filter start timestamp.
      * @param int $timeend Filter end timestamp.
+     * @param string $filtersource Filter by revenue source ('wallet', 'core_payment', or empty for all).
      * @return array Array of course breakdown objects.
      */
     public static function get_teacher_courses(
         int $teacherid,
         string $currency = '',
         int $timestart = 0,
-        int $timeend = 0
+        int $timeend = 0,
+        string $filtersource = ''
     ): array {
         global $DB;
 
@@ -133,6 +137,10 @@ class calculator {
         if ($timeend > 0) {
             $where .= " AND s.timecreated <= :timeend";
             $params['timeend'] = $timeend;
+        }
+        if (!empty($filtersource)) {
+            $where .= " AND s.source = :source";
+            $params['source'] = $filtersource;
         }
 
         $sql = "SELECT " . $DB->sql_concat('s.courseid', "':'", 's.currency') . " AS ukey,
@@ -168,8 +176,17 @@ class calculator {
 
     /**
      * Helper to get lifetime balances per teacher and currency.
+     *
+     * @param int $filterteacher Specific teacher user ID (0 for all).
+     * @param string $filtercurrency Currency code (empty for all).
+     * @param string $filtersource Revenue source filter (empty for all).
+     * @return array Array of lifetime metrics per teacher and currency.
      */
-    protected static function get_lifetime_balances(int $filterteacher = 0, string $filtercurrency = ''): array {
+    protected static function get_lifetime_balances(
+        int $filterteacher = 0,
+        string $filtercurrency = '',
+        string $filtersource = ''
+    ): array {
         global $DB;
 
         // Lifetime sales shares.
@@ -182,6 +199,10 @@ class calculator {
         if (!empty($filtercurrency)) {
             $where .= " AND s.currency = :cur";
             $params['cur'] = $filtercurrency;
+        }
+        if (!empty($filtersource)) {
+            $where .= " AND s.source = :source";
+            $params['source'] = $filtersource;
         }
 
         $sql = "SELECT " . $DB->sql_concat('s.teacherid', "':'", 's.currency') . " AS ukey,
@@ -234,12 +255,20 @@ class calculator {
 
     /**
      * Helper to get period sales per teacher and currency.
+     *
+     * @param int $timestart Filter start timestamp.
+     * @param int $timeend Filter end timestamp.
+     * @param int $filterteacher Specific teacher user ID (0 for all).
+     * @param string $filtercurrency Currency code (empty for all).
+     * @param string $filtersource Revenue source filter (empty for all).
+     * @return array Array of period sales metrics.
      */
     protected static function get_period_sales(
         int $timestart = 0,
         int $timeend = 0,
         int $filterteacher = 0,
-        string $filtercurrency = ''
+        string $filtercurrency = '',
+        string $filtersource = ''
     ): array {
         global $DB;
 
@@ -260,6 +289,10 @@ class calculator {
         if (!empty($filtercurrency)) {
             $where .= " AND s.currency = :cur";
             $params['cur'] = $filtercurrency;
+        }
+        if (!empty($filtersource)) {
+            $where .= " AND s.source = :source";
+            $params['source'] = $filtersource;
         }
 
         $sql = "SELECT " . $DB->sql_concat('s.teacherid', "':'", 's.currency') . " AS ukey,
@@ -332,9 +365,15 @@ class calculator {
      * @param int $partnerid Partner ID.
      * @param int $timestart Filter start timestamp (0 for all time).
      * @param int $timeend Filter end timestamp (0 for all time).
+     * @param string $filtersource Filter by revenue source ('wallet', 'core_payment', or empty for all).
      * @return array Array of summary objects per currency.
      */
-    public static function get_partner_summary(int $partnerid, int $timestart = 0, int $timeend = 0): array {
+    public static function get_partner_summary(
+        int $partnerid,
+        int $timestart = 0,
+        int $timeend = 0,
+        string $filtersource = ''
+    ): array {
         global $DB;
 
         $teacherids = partner_manager::get_teacher_ids_for_partner($partnerid);
@@ -349,8 +388,12 @@ class calculator {
                             SUM(s.amount) AS totalsales,
                             SUM(s.teachershare) AS totalshare
                        FROM {local_walletrevenue_sale} s
-                      WHERE s.teacherid $insql
-                   GROUP BY s.currency";
+                      WHERE s.teacherid $insql";
+        if (!empty($filtersource)) {
+            $sharesql .= " AND s.source = :source";
+            $inparams['source'] = $filtersource;
+        }
+        $sharesql .= " GROUP BY s.currency";
         $sharerows = $DB->get_records_sql($sharesql, $inparams);
 
         // 2. Lifetime payouts recorded directly to this partner.
@@ -390,9 +433,15 @@ class calculator {
      * @param int $partnerid Partner ID.
      * @param int $timestart Filter start timestamp (0 for all time).
      * @param int $timeend Filter end timestamp (0 for all time).
+     * @param string $filtersource Filter by revenue source ('wallet', 'core_payment', or empty for all).
      * @return array Array of teacher breakdown objects.
      */
-    public static function get_partner_teachers(int $partnerid, int $timestart = 0, int $timeend = 0): array {
+    public static function get_partner_teachers(
+        int $partnerid,
+        int $timestart = 0,
+        int $timeend = 0,
+        string $filtersource = ''
+    ): array {
         global $DB;
 
         $teacherids = partner_manager::get_teacher_ids_for_partner($partnerid);
@@ -409,6 +458,10 @@ class calculator {
         if ($timeend > 0) {
             $where .= " AND s.timecreated <= :end";
             $params['end'] = $timeend;
+        }
+        if (!empty($filtersource)) {
+            $where .= " AND s.source = :source";
+            $params['source'] = $filtersource;
         }
 
         $ukey = $DB->sql_concat('s.teacherid', "':'", 's.currency');
@@ -443,9 +496,15 @@ class calculator {
      * @param int $partnerid Partner ID.
      * @param int $timestart Filter start timestamp (0 for all time).
      * @param int $timeend Filter end timestamp (0 for all time).
+     * @param string $filtersource Filter by revenue source ('wallet', 'core_payment', or empty for all).
      * @return array Array of course breakdown objects.
      */
-    public static function get_partner_courses(int $partnerid, int $timestart = 0, int $timeend = 0): array {
+    public static function get_partner_courses(
+        int $partnerid,
+        int $timestart = 0,
+        int $timeend = 0,
+        string $filtersource = ''
+    ): array {
         global $DB;
 
         $teacherids = partner_manager::get_teacher_ids_for_partner($partnerid);
@@ -462,6 +521,10 @@ class calculator {
         if ($timeend > 0) {
             $where .= " AND s.timecreated <= :end";
             $params['end'] = $timeend;
+        }
+        if (!empty($filtersource)) {
+            $where .= " AND s.source = :source";
+            $params['source'] = $filtersource;
         }
 
         $ukey = $DB->sql_concat('s.courseid', "':'", 's.currency');

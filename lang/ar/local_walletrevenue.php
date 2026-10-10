@@ -41,6 +41,17 @@ $string['defaultcurrency'] = 'العملة الافتراضية';
 $string['defaultcurrency_desc'] = 'رمز العملة القياسي المكون من 3 أحرف (مثل USD، EGP، SAR) للتقارير والمدفوعات.';
 $string['includemicropayments'] = 'تضمين المدفوعات الجزئية والمصغرة';
 $string['includemicropayments_desc'] = 'تضمين مدفوعات الوصول إلى الأقسام والأنشطة عبر availability_wallet في إيرادات المقرر.';
+$string['enablewalletsync'] = 'تفعيل مزامنة معاملات المحفظة';
+$string['enablewalletsync_desc'] = 'مزامنة مبيعات المقررات والمدفوعات المصغرة والاستردادات من إضافة المحفظة (enrol_wallet).';
+$string['enablepaymentsync'] = 'تفعيل مزامنة بوابات الدفع الأساسية';
+$string['enablepaymentsync_desc'] = 'مزامنة مبيعات المقررات التي تمت معالجتها عبر بوابات الدفع الرسمية لمودل (مثل PayPal و Stripe عبر enrol_fee).';
+$string['source'] = 'مصدر الإيراد';
+$string['source_all'] = 'جميع المصادر';
+$string['source_wallet'] = 'المحفظة';
+$string['source_core_payment'] = 'بوابة الدفع الرسمية';
+$string['gateway'] = 'بوابة الدفع';
+$string['filtersource'] = 'تصفية حسب المصدر';
+$string['cli_option_source'] = 'تصفية المزامنة حسب المصدر (all أو wallet أو payment). الافتراضي: all';
 
 // Navigation & tabs.
 $string['reports'] = 'تقارير الأرباح';
@@ -133,6 +144,8 @@ $string['privacy:metadata:sale:studentid'] = 'الطالب الذي قام بش�
 $string['privacy:metadata:sale:teacherid'] = 'المعلم المستحق لحصة الأرباح.';
 $string['privacy:metadata:sale:amount'] = 'المبلغ الصافي المدفوع.';
 $string['privacy:metadata:sale:teachershare'] = 'حصة المعلم المحتسبة.';
+$string['privacy:metadata:sale:source'] = 'النظام أو المصدر الذي نشأت منه المعاملة (المحفظة أو بوابة الدفع).';
+$string['privacy:metadata:sale:gateway'] = 'بوابة الدفع أو وسيلة السداد المستخدمة في المعاملة.';
 $string['privacy:metadata:payout'] = 'التحويلات المالية المسجلة للمعلمين.';
 $string['privacy:metadata:payout:teacherid'] = 'المعلم الذي استلم الدفعة.';
 $string['privacy:metadata:payout:amount'] = 'المبلغ المدفوع.';

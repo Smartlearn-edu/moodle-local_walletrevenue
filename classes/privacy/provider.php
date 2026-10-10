@@ -71,6 +71,8 @@ class provider implements
             'local_walletrevenue_sale',
             [
                 'transactionid' => 'privacy:metadata:sale',
+                'source'        => 'privacy:metadata:sale:source',
+                'gateway'       => 'privacy:metadata:sale:gateway',
                 'type'          => 'privacy:metadata:sale',
                 'courseid'      => 'privacy:metadata:sale',
                 'studentid'     => 'privacy:metadata:sale:studentid',

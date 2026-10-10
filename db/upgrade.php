@@ -103,5 +103,42 @@ function xmldb_local_walletrevenue_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101004, 'local', 'walletrevenue');
     }
 
+    if ($oldversion < 2026101006) {
+        $table = new xmldb_table('local_walletrevenue_sale');
+
+        // Add source field.
+        $fieldsource = new xmldb_field('source', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'wallet');
+        if (!$dbman->field_exists($table, $fieldsource)) {
+            $dbman->add_field($table, $fieldsource);
+        }
+
+        // Add gateway field.
+        $fieldgateway = new xmldb_field('gateway', XMLDB_TYPE_CHAR, '50', null, XMLDB_NOTNULL, null, 'wallet');
+        if (!$dbman->field_exists($table, $fieldgateway)) {
+            $dbman->add_field($table, $fieldgateway);
+        }
+
+        // Drop old unique key on transactionid if it exists.
+        $oldkey = new xmldb_key('transactionid_uniq', XMLDB_KEY_UNIQUE, ['transactionid']);
+        if ($dbman->key_exists($table, $oldkey)) {
+            $dbman->drop_key($table, $oldkey);
+        }
+
+        // Add new compound unique key on (source, transactionid).
+        $newkey = new xmldb_key('source_tx_uniq', XMLDB_KEY_UNIQUE, ['source', 'transactionid']);
+        if (!$dbman->key_exists($table, $newkey)) {
+            $dbman->add_key($table, $newkey);
+        }
+
+        // Add index on source.
+        $indexsource = new xmldb_index('source_idx', XMLDB_INDEX_NOTUNIQUE, ['source']);
+        if (!$dbman->index_exists($table, $indexsource)) {
+            $dbman->add_index($table, $indexsource);
+        }
+
+        // Walletrevenue savepoint reached.
+        upgrade_plugin_savepoint(true, 2026101006, 'local', 'walletrevenue');
+    }
+
     return true;
 }

@@ -43,4 +43,47 @@ class observer {
 
         sale_sync::sync_single_transaction($transactionid, $freecut);
     }
+
+    /**
+     * Observer callback for core user_enrolment_created event.
+     *
+     * Ingests payments made via Moodle core payment gateways (e.g. enrol_fee).
+     *
+     * @param \core\event\base $event The triggered event object.
+     * @return void
+     */
+    public static function user_enrolment_created(\core\event\base $event): void {
+        global $DB;
+
+        if (!$DB->get_manager()->table_exists('payments')) {
+            return;
+        }
+
+        $other = $event->other ?? [];
+        $enrolid = isset($other['enrolid']) ? (int) $other['enrolid'] : 0;
+        $userid = (int) $event->relateduserid;
+
+        if ($enrolid <= 0 || $userid <= 0) {
+            return;
+        }
+
+        $payments = $DB->get_records_select(
+            'payments',
+            'itemid = :itemid AND userid = :userid AND component <> :walletcomponent',
+            [
+                'itemid'          => $enrolid,
+                'userid'          => $userid,
+                'walletcomponent' => 'enrol_wallet',
+            ],
+            'id DESC',
+            'id',
+            0,
+            1
+        );
+
+        if (!empty($payments)) {
+            $payment = reset($payments);
+            sale_sync::sync_single_payment((int) $payment->id);
+        }
+    }
 }

@@ -34,7 +34,13 @@ if (isguestuser()) {
 
 $context = context_system::instance();
 
-$PAGE->set_url(new moodle_url('/local/walletrevenue/my.php'));
+$source = optional_param('source', '', PARAM_ALPHAEXT);
+
+$pageurl = new moodle_url('/local/walletrevenue/my.php');
+if (!empty($source)) {
+    $pageurl->param('source', $source);
+}
+$PAGE->set_url($pageurl);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('myrevenue', 'local_walletrevenue'));
 $PAGE->set_heading(get_string('myrevenue', 'local_walletrevenue'));
@@ -82,8 +88,25 @@ if ($assignedpartner) {
     echo $OUTPUT->notification($noticemsg, \core\output\notification::NOTIFY_INFO);
 }
 
+// Source filter buttons.
+$sourceoptions = [
+    ''             => get_string('source_all', 'local_walletrevenue'),
+    'wallet'       => get_string('source_wallet', 'local_walletrevenue'),
+    'core_payment' => get_string('source_core_payment', 'local_walletrevenue'),
+];
+echo html_writer::start_div('mb-3');
+echo html_writer::tag('span', get_string('source', 'local_walletrevenue') . ': ', ['class' => 'me-2 fw-bold text-muted']);
+echo html_writer::start_div('btn-group btn-group-sm', ['role' => 'group']);
+foreach ($sourceoptions as $optval => $optlabel) {
+    $btnurl = new moodle_url('/local/walletrevenue/my.php', ['source' => $optval]);
+    $activeclass = ($source === $optval) ? 'btn-primary' : 'btn-outline-secondary';
+    echo html_writer::link($btnurl, $optlabel, ['class' => 'btn ' . $activeclass]);
+}
+echo html_writer::end_div();
+echo html_writer::end_div();
+
 // 1. Balance Overview Cards (per currency).
-$summaries = calculator::get_teachers_summary(0, 0, $teacherid);
+$summaries = calculator::get_teachers_summary(0, 0, $teacherid, '', $source);
 
 echo $OUTPUT->heading(get_string('myearnings', 'local_walletrevenue'), 3);
 
@@ -112,7 +135,7 @@ echo '</div>';
 
 // 2. Monetized Courses Table.
 echo $OUTPUT->heading(get_string('mycourses', 'local_walletrevenue'), 4);
-$courses = calculator::get_teacher_courses($teacherid);
+$courses = calculator::get_teacher_courses($teacherid, '', 0, 0, $source);
 
 $coursetable = new html_table();
 $coursetable->head = [

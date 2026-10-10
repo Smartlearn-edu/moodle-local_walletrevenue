@@ -35,10 +35,16 @@ function xmldb_local_walletrevenue_install(): void {
     global $DB;
 
     // Set safe install floor cursor to the latest current wallet transaction ID.
-    $maxid = 0;
+    $maxwalletid = 0;
     if ($DB->get_manager()->table_exists('enrol_wallet_transactions')) {
-        $maxid = (int) $DB->get_field_sql('SELECT MAX(id) FROM {enrol_wallet_transactions}');
+        $maxwalletid = (int) $DB->get_field_sql('SELECT MAX(id) FROM {enrol_wallet_transactions}');
     }
+    set_config('installfloor', $maxwalletid, 'local_walletrevenue');
 
-    set_config('installfloor', $maxid, 'local_walletrevenue');
+    // Set safe install floor cursor to the latest current core payment ID.
+    $maxpaymentid = 0;
+    if ($DB->get_manager()->table_exists('payments')) {
+        $maxpaymentid = (int) $DB->get_field_sql('SELECT MAX(id) FROM {payments}');
+    }
+    set_config('installfloor_payment', $maxpaymentid, 'local_walletrevenue');
 }
