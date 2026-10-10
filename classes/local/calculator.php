@@ -135,7 +135,8 @@ class calculator {
             $params['timeend'] = $timeend;
         }
 
-        $sql = "SELECT s.courseid,
+        $sql = "SELECT " . $DB->sql_concat('s.courseid', "':'", 's.currency') . " AS ukey,
+                       s.courseid,
                        c.fullname AS coursename,
                        c.shortname AS courseshortname,
                        s.currency,
